@@ -2,9 +2,8 @@ const mongoose = require('mongoose');
 
 const connectDB = async () => {
   try {
-    // Uses local fallback if process.env.MONGO_URI isn't configured yet
-    const dbURI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/medilab_connect';
-    
+    const dbURI = process.env.MONGO_URI;
+
     await mongoose.connect(dbURI);
     console.log('🚀 MongoDB connected successfully for MediLab Connect!');
   } catch (error) {
