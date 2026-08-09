@@ -5,6 +5,7 @@ const connectDB = require('./database');
 const testRoutes = require('./routes/testRoutes');
 const resultRoutes = require('./routes/resultRoutes');
 const bookingRoutes = require('./routes/bookingRoutes');
+const reportRoutes = require('./routes/reportRoutes');
 
 const app = express();
 
@@ -19,6 +20,7 @@ connectDB();
 app.use('/api/tests', testRoutes);
 app.use('/api/results', resultRoutes);
 app.use('/api/bookings', bookingRoutes);
+app.use('/api/reports', reportRoutes);
 
 // Test Route for base URL
 app.get('/', (req, res) => res.send('API Running'));
