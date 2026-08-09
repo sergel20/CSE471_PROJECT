@@ -1,4 +1,5 @@
 const express = require('express');
+const cors = require('cors');
 const connectDB = require('./database');
 
 const testRoutes = require('./routes/testRoutes');
@@ -8,6 +9,7 @@ const bookingRoutes = require('./routes/bookingRoutes');
 const app = express();
 
 // Middleware
+app.use(cors());
 app.use(express.json());
 
 // Connect Database
