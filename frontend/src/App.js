@@ -4,6 +4,8 @@ import Navbar from './components/Navbar';
 import BookingPage from './pages/BookingPage';
 import DiagnosticTestManagementPage from './pages/DiagnosticTestManagementPage';
 import ResultManagementPage from './pages/ResultManagementPage';
+import SampleStatusPage from './pages/SampleStatusPage';
+import ReportApprovalPage from './pages/ReportApprovalPage';
 
 function App() {
   return (
@@ -14,6 +16,8 @@ function App() {
           <Route path="/" element={<BookingPage />} />
           <Route path="/tests" element={<DiagnosticTestManagementPage />} />
           <Route path="/results" element={<ResultManagementPage />} />
+          <Route path="/sample-status" element={<SampleStatusPage />} />
+          <Route path="/report-approval" element={<ReportApprovalPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>

@@ -21,6 +21,18 @@ const BookingSchema = new mongoose.Schema({
     enum: ['pending', 'paid', 'failed'],
     default: 'pending',
   },
+  sampleStatus: {
+    type: String,
+    enum: ['Booked', 'Sample Collected', 'Received in Lab', 'Under Processing', 'Result Ready', 'Approved', 'Delivered'],
+    default: 'Booked',
+  },
+  statusHistory: [
+    {
+      status: { type: String },
+      updatedAt: { type: Date, default: Date.now },
+      updatedBy: { type: String },
+    },
+  ],
 }, {
   timestamps: true,
 });
