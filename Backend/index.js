@@ -3,11 +3,11 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const connectDB = require('./database');
-
 const testRoutes = require('./routes/testRoutes');
-const resultRoutes = require('./routes/resultRoutes');
+const resultRoutes = require('./routes/resultRoutes')
 const bookingRoutes = require('./routes/bookingRoutes');
-
+const sampleStatusRoutes = require('./routes/sampleStatusRoutes');
+const reportApprovalRoutes = require('./routes/reportApprovalRoutes');
 const app = express();
 
 // Middleware
@@ -21,7 +21,8 @@ connectDB();
 app.use('/api/tests', testRoutes);
 app.use('/api/results', resultRoutes);
 app.use('/api/bookings', bookingRoutes);
-
+app.use('/api/sample-status', sampleStatusRoutes);
+app.use('/api/report-approval', reportApprovalRoutes);
 // Test Route for base URL
 app.get('/', (req, res) => res.send('API Running'));
 

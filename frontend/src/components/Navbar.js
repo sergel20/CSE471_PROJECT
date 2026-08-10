@@ -4,10 +4,10 @@ const NAV_ITEMS = [
   { label: 'Home', to: '/' },
   { label: 'Diagnostic Tests', to: '/tests' },
   { label: 'Results', to: '/results' },
-  { label: 'Reports', to: '#' },
+  { label: 'Sample Status', to: '/sample-status' },
+  { label: 'Reports', to: '/report-approval' },
   { label: 'Profile', to: '#' },
 ];
-
 function Navbar() {
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-10">

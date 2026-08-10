@@ -1,17 +1,8 @@
 const express = require('express');
-
-const {
-  createBooking,
-  getBookings,
-  confirmBooking,
-  deleteBooking,
-} = require('../controllers/bookingController');
-
 const router = express.Router();
+const { previewBooking } = require('../controllers/bookingController');
 
-router.post('/', createBooking);
-router.get('/', getBookings);
-router.put('/confirm/:id', confirmBooking);
-router.delete('/:id', deleteBooking);
+// POST: Validate selected tests + patient info, return server-calculated total (no DB write)
+router.post('/preview', previewBooking);
 
 module.exports = router;
