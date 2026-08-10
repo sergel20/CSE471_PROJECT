@@ -41,33 +41,25 @@ const DonorSchema = new mongoose.Schema({
   },
   lastDonationDate: {
     type: Date,
-    default: null, // null means the donor has never donated before
-  },
-  healthStatus: {
-    type: String,
-    required: true,
-    enum: ['Healthy', 'Minor Illness', 'Chronic Condition', 'Not Fit'],
-    default: 'Healthy',
-  },
-  availability: {
-    type: Boolean,
-    default: true, // Donor's self-reported willingness to be contacted for donation
+    default: null,
+    // null means the donor has never donated before. Settable by the donor ONLY at initial
+    // profile creation (their prior donation history); after that it can only change when an
+    // incoming donation request is accepted (see donationRequestController.acceptRequest) —
+    // never through the normal profile-update endpoint.
   },
 }, {
   timestamps: true,
 });
 
 // Computes whether the donor currently meets all eligibility criteria to donate blood.
+// Deliberately simple and centralized here: age range + minimum gap since last donation.
+// Change MIN_DONATION_AGE / MAX_DONATION_AGE / MIN_DAYS_BETWEEN_DONATIONS above to adjust the rule.
 DonorSchema.methods.getEligibility = function () {
   const reasons = [];
   let nextEligibleDate = null;
 
   if (this.age < MIN_DONATION_AGE || this.age > MAX_DONATION_AGE) {
     reasons.push(`Donor age must be between ${MIN_DONATION_AGE} and ${MAX_DONATION_AGE} years.`);
-  }
-
-  if (this.healthStatus !== 'Healthy') {
-    reasons.push(`Health status must be "Healthy" to donate (currently "${this.healthStatus}").`);
   }
 
   if (this.lastDonationDate) {
@@ -81,10 +73,6 @@ DonorSchema.methods.getEligibility = function () {
         `Must wait ${MIN_DAYS_BETWEEN_DONATIONS - daysSinceLastDonation} more day(s) since last donation.`
       );
     }
-  }
-
-  if (!this.availability) {
-    reasons.push('Donor has marked themselves as unavailable.');
   }
 
   return {
