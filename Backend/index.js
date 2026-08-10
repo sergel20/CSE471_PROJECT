@@ -8,6 +8,8 @@ const resultRoutes = require('./routes/resultRoutes')
 const bookingRoutes = require('./routes/bookingRoutes');
 const sampleStatusRoutes = require('./routes/sampleStatusRoutes');
 const reportApprovalRoutes = require('./routes/reportApprovalRoutes');
+const donorRoutes = require('./routes/donorRoutes');
+const authRoutes = require('./routes/authRoutes');
 const app = express();
 
 // Middleware
@@ -23,6 +25,8 @@ app.use('/api/results', resultRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/sample-status', sampleStatusRoutes);
 app.use('/api/report-approval', reportApprovalRoutes);
+app.use('/api/donors', donorRoutes);
+app.use('/api/auth', authRoutes);
 // Test Route for base URL
 app.get('/', (req, res) => res.send('API Running'));
 
