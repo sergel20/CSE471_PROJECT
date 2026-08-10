@@ -1,48 +1,28 @@
 const mongoose = require('mongoose');
 
-const bookingSchema = new mongoose.Schema(
-  {
-    patientName: {
-      type: String,
-      required: true,
-      trim: true,
+const BookingSchema = new mongoose.Schema({
+  tests: [
+    {
+      test: { type: mongoose.Schema.Types.ObjectId, ref: 'DiagnosticTest', required: true },
+      testName: { type: String, required: true },
+      price: { type: Number, required: true },
     },
-    phone: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    testName: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    bookingDate: {
-      type: String,
-      required: true,
-    },
-    totalAmount: {
-      type: Number,
-      required: true,
-    },
-    paymentStatus: {
-      type: String,
-      enum: ['Pending', 'Paid', 'Failed', 'Refunded'],
-      default: 'Pending',
-    },
-    bookingStatus: {
-      type: String,
-      enum: ['Pending', 'Confirmed', 'Cancelled'],
-      default: 'Pending',
-    },
-    sampleId: {
-      type: String,
-      default: '',
-    },
+  ],
+  patientInfo: {
+    fullName: { type: String, required: true },
+    phone: { type: String, required: true },
+    email: { type: String, required: true },
+    address: { type: String, required: true },
   },
-  { timestamps: true }
-);
+  preferredDate: { type: Date, required: true },
+  totalPrice: { type: Number, required: true },
+  paymentStatus: {
+    type: String,
+    enum: ['pending', 'paid', 'failed'],
+    default: 'pending',
+  },
+}, {
+  timestamps: true,
+});
 
-const Booking = mongoose.model('Booking', bookingSchema);
-
-module.exports = Booking;
+module.exports = mongoose.model('Booking', BookingSchema);
