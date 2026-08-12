@@ -17,8 +17,8 @@ export function AuthProvider({ children }) {
     setUser(nextUser);
   };
 
-  const signup = async (name, email, password) => {
-    const { data } = await apiClient.post('/auth/signup', { name, email, password });
+  const signup = async (name, email, password, role) => {
+    const { data } = await apiClient.post('/auth/signup', { name, email, password, role });
     persist(data.token, data.user);
   };
 

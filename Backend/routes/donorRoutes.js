@@ -7,10 +7,12 @@ const {
   getMyDonationHistory,
 } = require('../controllers/donorController');
 const requireAuth = require('../middleware/auth');
+const requireRole = require('../middleware/role');
 
-router.get('/me', requireAuth, getMyDonor);
-router.put('/me', requireAuth, upsertMyDonor);
-router.delete('/me', requireAuth, deleteMyDonor);
-router.get('/me/donations', requireAuth, getMyDonationHistory);
+// Donor profile management is exclusive to the Blood Donor role.
+router.get('/me', requireAuth, requireRole('donor'), getMyDonor);
+router.put('/me', requireAuth, requireRole('donor'), upsertMyDonor);
+router.delete('/me', requireAuth, requireRole('donor'), deleteMyDonor);
+router.get('/me/donations', requireAuth, requireRole('donor'), getMyDonationHistory);
 
 module.exports = router;
