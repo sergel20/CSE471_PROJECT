@@ -1,0 +1,122 @@
+CSE471: System Analysis and Design
+Assignment on Functional Requirements
+Proposed Project Title: MediLab Connect- A Diagnostic Lab and Healthcare Support System 
+
+
+Group No: 05, CSE471 Lab Section:03,  
+Summer 2026
+	
+
+	member 1)Saeeb Rahman Samin
+	member 2)Sarjil Hasan
+	member 3)Amrin Islam
+	member 4)Synthia Akter Promi
+	
+
+
+Project Overview
+The “MediLab Connect” system is a web-based healthcare platform mainly designed to manage diagnostic test booking, sample tracking, payment, and lab report delivery. The core focus of this project is the diagnostic lab service, where patients can search for available tests, book diagnostic tests, pay online, track sample progress, and download approved reports.To make the system more useful in real healthcare situations, the project also includes two side-support features: blood donation support and medicine assistance. Through the blood support module, patients or hospitals can submit emergency blood requests and find nearby eligible donors. Through the medicine support module, users can search for medicine availability, submit emergency medicine requests, and get help through a chatbot. The system will manage different user roles such as Patients, Lab Staff, Doctors, Blood Donors, Hospital Staff, Pharmacies, Agents, and Admin. The platform will reduce communication gaps between patients and healthcare service providers by keeping test booking, payment, sample tracking, blood request, medicine support, and help desk communication in one system.
+
+
+Tech Stack:
+Language: JavaScript
+Frontend: React.js
+Backend: Node.js with Express.js
+Database: MongoDB
+ODM: Mongoose
+Styling: Tailwind CSS
+Authentication: JWT Authentication
+Payment API: bKash Payment API
+Chatbot / Agent Chat: OpenAI API or rule-based chatbot for the first version
+Deployment: Vercel for frontend and Render for backend
+External APIs / Services:
+* bKash API: For diagnostic test payment (Amrin Islam)
+* OpenAI API / Rule-Based Bot: For chatbot support (Synthia Akter Promi)
+* Email/SMS API: For notifications and reminders (Saeeb Rahman Samin)
+* Geolocation API: For nearby donor matching (Sarjil Hasan)
+* PDF Generator Library: For report download (Saeeb Rahman Samin)
+________________
+
+
+
+
+ 
+User Roles
+1. Patient
+Patients can search diagnostic tests, book tests, make payment, track sample status, download approved reports, request blood, search medicines, submit emergency medicine requests, and use chatbot or agent support.
+2. Lab Staff
+Lab staff can confirm bookings, generate sample IDs, update sample status, and enter diagnostic test results.
+3. Doctor / Report Approver
+Doctors can review lab results and approve or reject reports before patients can download them.
+4. Blood Donor
+Blood donors can create donor profiles, update health and availability status, view eligibility, and receive emergency donation notifications.
+5. Hospital Staff
+Hospital staff can submit emergency blood requests and manage blood stock with expiry information.
+6. Pharmacy
+Pharmacies can add medicine information, update stock, manage expiry dates, and respond to emergency medicine requests.
+7. Admin
+Admin manages users, verifies hospitals and pharmacies, monitors bookings, payments, reports, blood requests, medicine requests, chatbot activities, and system analytics.
+
+
+
+Functional Requirements
+
+Common Workflows:
+	
+1)Registration and Login System: Users can create an account by providing basic details such as name, email, phone number, password, and role. After registration, users can log in securely and access their own dashboard based on their role. 
+2)Admin Role and Access Management: Admin can verify hospitals, pharmacies, doctors, lab staff, and support agents. Only verified users can access sensitive features such as report approval, medicine stock management, and hospital blood inventory 
+3)
+Role-Based Dashboard: Each role will have a separate dashboard. Patients will see bookings and reports, lab staff will manage samples, doctors will approve reports, donors will manage donation status, pharmacies will manage medicine stock, and admins will monitor the full system.
+	
+
+Module 1:Core Diagnostic Lab, Payment and Report Management :
+
+member 2: Diagnostic Test Management: Admin can add, update, and delete diagnostic tests such as CBC, Blood Glucose, ALT, Creatinine, Lipid Profile, Thyroid Test, and Urine Test. Each test will include test name, price, sample type, unit, reference range, and estimated report delivery time. 
+
+member4:Diagnostic Test Search and Booking: Patients can search available diagnostic tests, select one or multiple tests, choose a preferred date, provide contact information, and submit a booking request. The system will show the total price before confirmation. 
+
+member1:Booking Confirmation and Sample ID Generation: Lab staff or admin can confirm paid bookings. After confirmation, the system will automatically generate a unique sample ID such as LAB-2026-0001. This ID will be used to track the sample throughout the testing process. 
+
+
+member 3
+Sample Status Tracking: Patients can track sample progress from their dashboard. Status options may include Booked, Sample Collected, Received in Lab, Under Processing, Result Ready, Approved, and Delivered. Lab staff can update the status step by step. 
+
+member 2: Result Entry with Normal/High/Low Flag: Lab staff can enter result values, units, and reference ranges. The system will compare the result with the reference range and automatically show whether the result is Normal, High, Low, or Abnormal. 
+
+member3:
+Doctor Report Approval System: Doctors or authorized report approvers can review entered results and approve or reject reports. Patients will only be able to view or download reports after approval. 
+
+member1:
+Report Download and Report History: Patients can download approved diagnostic reports as PDF files. The report will include patient information, sample ID, test name, result, unit, reference range, result flag, approval status, and report date. Patients can also view their previous report history. 
+	
+
+
+
+Module 2: Blood Donation and Hospital Blood Support :
+
+member 4:Blood Donor Profile and Eligibility: Users can create donor profiles by providing blood group, age, phone number, location, last donation date, health status, and availability. The system will calculate whether the donor is currently eligible to donate again. 
+
+member 1:Emergency Blood Request: Patients or hospital staff can submit urgent blood requests by entering blood group, component type, required units, hospital name, location, contact number, and urgency level. 
+
+member2:
+Nearby Donor Matching: When an emergency blood request is submitted, the system will search for available donors with the matching blood group and nearby location. The system can use geolocation data to show the most suitable donors first. 
+
+member3:Hospital Blood Inventory and Expiry Tracking: Hospital staff can manage blood stock by blood group, component type, quantity, collection date, and expiry date. The system will show alerts when any blood unit is low in stock or close to expiry. 
+	
+
+ 
+Module 3 Medicine Support, Chatbot and Admin Monitoring 
+
+member 4:Medicine Search and Availability: Patients can search medicines by name, brand, or category. The system will show medicine name, pharmacy name, price, stock availability, expiry status, and whether a prescription is required. 
+
+member2:Pharmacy Stock and Expiry Management: Verified pharmacies can add and update medicine details such as medicine name, brand, price, quantity, batch number, expiry date, and stock status. The system will show In Stock, Low Stock, Out of Stock, Expiring Soon, or Expired status. 
+
+member 1:Emergency Medicine Request: Patients can submit emergency medicine requests by entering medicine name, quantity, location, urgency level, and prescription if required. Pharmacy or admin can respond to the request and update the request status. 
+
+member4
+Chatbot: Patients can use a chatbot to ask basic questions about diagnostic tests, test preparation, report status, medicine information, and general support. 
+	
+
+
+
+member 3:Online Payment and Digital Invoice: After selecting tests, patients can pay the test fee using a payment API such as bKash. The system will store payment status as Pending, Paid, Failed, or Refunded. After successful payment, a digital invoice will be generated with transaction ID, selected tests, amount, and booking date.

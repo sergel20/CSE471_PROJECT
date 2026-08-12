@@ -1,16 +1,17 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
+const { ROLES } = User;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-function signToken(userId) {
-  return jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: '7d' });
+function signToken(user) {
+  return jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
 }
 
 // POST: Register a new user account
 const signup = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, role } = req.body;
 
     if (!name || !name.trim()) {
       return res.status(400).json({ message: 'Name is required.' });
@@ -21,14 +22,22 @@ const signup = async (req, res) => {
     if (!password || password.length < 6) {
       return res.status(400).json({ message: 'Password must be at least 6 characters.' });
     }
+    if (role && !ROLES.includes(role)) {
+      return res.status(400).json({ message: `Role must be one of: ${ROLES.join(', ')}` });
+    }
 
     const existing = await User.findOne({ email: email.trim().toLowerCase() });
     if (existing) {
       return res.status(409).json({ message: 'An account with this email already exists.' });
     }
 
-    const user = await User.create({ name: name.trim(), email: email.trim(), password });
-    const token = signToken(user._id);
+    const user = await User.create({
+      name: name.trim(),
+      email: email.trim(),
+      password,
+      role: role || 'patient',
+    });
+    const token = signToken(user);
 
     res.status(201).json({ token, user });
   } catch (error) {
@@ -50,7 +59,7 @@ const login = async (req, res) => {
       return res.status(401).json({ message: 'Invalid email or password.' });
     }
 
-    const token = signToken(user._id);
+    const token = signToken(user);
     res.status(200).json({ token, user });
   } catch (error) {
     res.status(500).json({ message: 'Error logging in', error: error.message });
@@ -70,4 +79,32 @@ const getMe = async (req, res) => {
   }
 };
 
-module.exports = { signup, login, getMe };
+// GET: Admin — list all user accounts, for role verification/management
+const listUsers = async (req, res) => {
+  try {
+    const users = await User.find().sort({ createdAt: -1 });
+    res.status(200).json(users);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching users', error: error.message });
+  }
+};
+
+// PUT: Admin — change a user's role
+const updateUserRole = async (req, res) => {
+  try {
+    const { role } = req.body;
+    if (!role || !ROLES.includes(role)) {
+      return res.status(400).json({ message: `Role must be one of: ${ROLES.join(', ')}` });
+    }
+
+    const user = await User.findByIdAndUpdate(req.params.id, { role }, { new: true, runValidators: true });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.status(200).json(user);
+  } catch (error) {
+    res.status(400).json({ message: 'Error updating user role', error: error.message });
+  }
+};
+
+module.exports = { signup, login, getMe, listUsers, updateUserRole };

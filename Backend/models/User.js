@@ -1,6 +1,10 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
+// Every account is assigned exactly one role at signup. This drives both API
+// authorization (see middleware/role.js) and which dashboard the frontend renders.
+const ROLES = ['patient', 'lab_staff', 'doctor', 'donor', 'hospital_staff', 'pharmacy', 'admin'];
+
 const UserSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -18,6 +22,12 @@ const UserSchema = new mongoose.Schema({
     type: String,
     required: true,
     minlength: 6,
+  },
+  role: {
+    type: String,
+    required: true,
+    enum: ROLES,
+    default: 'patient',
   },
 }, {
   timestamps: true,
@@ -39,3 +49,4 @@ UserSchema.methods.toJSON = function toJSON() {
 };
 
 module.exports = mongoose.model('User', UserSchema);
+module.exports.ROLES = ROLES;

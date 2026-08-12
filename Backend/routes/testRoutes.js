@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const DiagnosticTest = require('../models/DiagnosticTest');
+const requireAuth = require('../middleware/auth');
+const requireRole = require('../middleware/role');
 
 // POST: Create a new diagnostic test
 const createTest = async (req, res) => {
@@ -74,9 +76,11 @@ const deleteTest = async (req, res) => {
 };
 
 // Map endpoints to controller logic
-router.post('/', createTest);
-router.get('/', getTests); // Handles both GET ALL and GET SINGLE
-router.put('/', updateTest);
-router.delete('/', deleteTest);
+// Browsing tests is available to any signed-in user (patients need this to book);
+// only Admin can add, update, or delete diagnostic tests.
+router.post('/', requireAuth, requireRole('admin'), createTest);
+router.get('/', requireAuth, getTests); // Handles both GET ALL and GET SINGLE
+router.put('/', requireAuth, requireRole('admin'), updateTest);
+router.delete('/', requireAuth, requireRole('admin'), deleteTest);
 
 module.exports = router;
