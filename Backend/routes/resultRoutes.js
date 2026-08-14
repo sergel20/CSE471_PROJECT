@@ -9,10 +9,10 @@ const {
 const requireAuth = require('../middleware/auth');
 const requireRole = require('../middleware/role');
 
-// Lab Staff enters/edits/deletes results; Doctor and Admin can view them (report review, oversight).
-router.post('/', requireAuth, requireRole('lab_staff', 'admin'), createResult);
+// Only lab staff enter results for samples released by the admin.
+router.post('/', requireAuth, requireRole('lab_staff'), createResult);
 router.get('/', requireAuth, requireRole('lab_staff', 'doctor', 'admin'), getResults);
-router.put('/', requireAuth, requireRole('lab_staff', 'admin'), updateResult);
-router.delete('/', requireAuth, requireRole('lab_staff', 'admin'), deleteResult);
+router.put('/', requireAuth, requireRole('lab_staff'), updateResult);
+router.delete('/', requireAuth, requireRole('lab_staff'), deleteResult);
 
 module.exports = router;

@@ -19,11 +19,9 @@ const NAV_ITEMS_BY_ROLE = {
   [ROLES.HOSPITAL_STAFF]: [{ label: 'Dashboard', to: '/dashboard' }],
   [ROLES.PHARMACY]: [{ label: 'Dashboard', to: '/dashboard' }],
   [ROLES.ADMIN]: [
+    { label: 'Bookings', to: '/admin/bookings' },
     { label: 'Diagnostic Tests', to: '/tests' },
     { label: 'Users', to: '/admin/users' },
-    { label: 'Results', to: '/results' },
-    { label: 'Sample Status', to: '/sample-status' },
-    { label: 'Report Approval', to: '/report-approval' },
   ],
 };
 

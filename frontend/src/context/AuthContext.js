@@ -5,14 +5,20 @@ const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
-    const stored = localStorage.getItem('user');
-    return stored ? JSON.parse(stored) : null;
+    const stored = sessionStorage.getItem('user');
+    if (!stored) return null;
+    try {
+      return JSON.parse(stored);
+    } catch (error) {
+      sessionStorage.removeItem('user');
+      return null;
+    }
   });
-  const [token, setToken] = useState(() => localStorage.getItem('token'));
+  const [token, setToken] = useState(() => sessionStorage.getItem('token'));
 
   const persist = (nextToken, nextUser) => {
-    localStorage.setItem('token', nextToken);
-    localStorage.setItem('user', JSON.stringify(nextUser));
+    sessionStorage.setItem('token', nextToken);
+    sessionStorage.setItem('user', JSON.stringify(nextUser));
     setToken(nextToken);
     setUser(nextUser);
   };
@@ -28,6 +34,10 @@ export function AuthProvider({ children }) {
   };
 
   const logout = () => {
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('user');
+    // Clear credentials created by older builds so they cannot unexpectedly
+    // restore a shared cross-tab session.
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setToken(null);

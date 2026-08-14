@@ -11,6 +11,7 @@ import SampleStatusPage from './pages/SampleStatusPage';
 import ReportApprovalPage from './pages/ReportApprovalPage';
 import MyDonorProfilePage from './pages/MyDonorProfilePage';
 import AdminUsersPage from './pages/AdminUsersPage';
+import AdminBookingsPage from './pages/AdminBookingsPage';
 import PlaceholderDashboardPage from './pages/PlaceholderDashboardPage';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
@@ -63,7 +64,7 @@ function AppShell() {
         <Route
           path="/results"
           element={
-            <RequireRole roles={[ROLES.LAB_STAFF, ROLES.ADMIN]}>
+            <RequireRole roles={[ROLES.LAB_STAFF]}>
               <ResultManagementPage />
             </RequireRole>
           }
@@ -79,8 +80,16 @@ function AppShell() {
         <Route
           path="/report-approval"
           element={
-            <RequireRole roles={[ROLES.PATIENT, ROLES.DOCTOR, ROLES.ADMIN]}>
+            <RequireRole roles={[ROLES.PATIENT, ROLES.DOCTOR]}>
               <ReportApprovalPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="/admin/bookings"
+          element={
+            <RequireRole roles={[ROLES.ADMIN]}>
+              <AdminBookingsPage />
             </RequireRole>
           }
         />

@@ -1,6 +1,7 @@
 // One-off script to populate the DiagnosticTest collection with sample data.
 // Run with: node seed.js
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 const mongoose = require('mongoose');
 const connectDB = require('./database');
 const DiagnosticTest = require('./models/DiagnosticTest');

@@ -8,12 +8,11 @@ const {
 const requireAuth = require('../middleware/auth');
 const requireRole = require('../middleware/role');
 
-// Lab Staff/Admin get the full multi-booking dashboard (free-text email search);
-// Patients hit the same endpoint but the controller scopes results to their own bookings only.
+// Patients see their own tracking data; lab staff only receive samples released
+// by the admin at Received in Lab or Under Processing.
 router.get('/', requireAuth, requireRole('patient', 'lab_staff', 'admin'), getDashboard);
-// Same ownership scoping applies to a single booking lookup.
-router.get('/:bookingId', requireAuth, getSampleStatus);
-// Only Lab Staff/Admin move a sample through its status steps.
-router.put('/:bookingId', requireAuth, requireRole('lab_staff', 'admin'), updateSampleStatus);
+router.get('/:bookingId', requireAuth, requireRole('patient', 'lab_staff', 'admin'), getSampleStatus);
+// Admin controls Booked -> Sample Collected -> Received in Lab -> Under Processing.
+router.put('/:bookingId/:sampleId', requireAuth, requireRole('admin'), updateSampleStatus);
 
 module.exports = router;

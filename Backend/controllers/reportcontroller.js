@@ -1,107 +1,95 @@
 const PDFDocument = require('pdfkit');
-const Report = require('../models/report');
+const Result = require('../models/Result');
 
-const createReport = async (req, res) => {
+function patientOwnsResult(result, userId) {
+  return result.booking && String(result.booking.patient) === String(userId);
+}
+
+async function findApprovedResult(resultId) {
+  return Result.findOne({ _id: resultId, approvalStatus: 'Approved' })
+    .populate('booking')
+    .populate('test', 'sampleType estimatedDeliveryHours');
+}
+
+const getMyReports = async (req, res) => {
   try {
-    const report = await Report.create(req.body);
+    const results = await Result.find({ approvalStatus: 'Approved' })
+      .populate({
+        path: 'booking',
+        match: { patient: req.user.id },
+        select: 'patient patientInfo preferredDate confirmedAt',
+      })
+      .sort({ approvedAt: -1 });
 
-    res.status(201).json({
-      message: 'Report created successfully',
-      report,
-    });
+    res.status(200).json(results.filter((result) => result.booking));
   } catch (error) {
-    res.status(500).json({
-      message: 'Failed to create report',
-      error: error.message,
-    });
+    res.status(500).json({ message: 'Failed to fetch report history', error: error.message });
   }
 };
 
-const getAllReports = async (req, res) => {
+const getReport = async (req, res) => {
   try {
-    const reports = await Report.find().sort({ createdAt: -1 });
-
-    res.status(200).json(reports);
+    const result = await findApprovedResult(req.params.id);
+    if (!result) return res.status(404).json({ message: 'Approved report not found.' });
+    if (req.user.role === 'patient' && !patientOwnsResult(result, req.user.id)) {
+      return res.status(404).json({ message: 'Approved report not found.' });
+    }
+    res.status(200).json(result);
   } catch (error) {
-    res.status(500).json({
-      message: 'Failed to fetch reports',
-      error: error.message,
-    });
-  }
-};
-
-const getReportHistory = async (req, res) => {
-  try {
-    const reports = await Report.find({ phone: req.params.phone }).sort({
-      createdAt: -1,
-    });
-
-    res.status(200).json(reports);
-  } catch (error) {
-    res.status(500).json({
-      message: 'Failed to fetch report history',
-      error: error.message,
-    });
+    res.status(500).json({ message: 'Failed to fetch report', error: error.message });
   }
 };
 
 const downloadReport = async (req, res) => {
   try {
-    const report = await Report.findById(req.params.id);
-
-    if (!report) {
-      return res.status(404).json({
-        message: 'Report not found',
-      });
+    const result = await findApprovedResult(req.params.id);
+    if (!result) return res.status(404).json({ message: 'Approved report not found.' });
+    if (req.user.role === 'patient' && !patientOwnsResult(result, req.user.id)) {
+      return res.status(404).json({ message: 'Approved report not found.' });
     }
 
-    if (report.approvalStatus !== 'Approved') {
-      return res.status(403).json({
-        message: 'Only approved reports can be downloaded',
-      });
-    }
+    const booking = result.booking;
+    if (!booking) return res.status(409).json({ message: 'Report booking information is missing.' });
 
-    const doc = new PDFDocument();
-
+    const doc = new PDFDocument({ margin: 50 });
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader(
-      'Content-Disposition',
-      `attachment; filename=report-${report.sampleId}.pdf`
-    );
-
+    res.setHeader('Content-Disposition', `attachment; filename=report-${result.sampleId}.pdf`);
     doc.pipe(res);
 
     doc.fontSize(22).text('MediLab Connect', { align: 'center' });
-    doc.fontSize(16).text('Diagnostic Report', { align: 'center' });
+    doc.fontSize(15).text('Approved Diagnostic Report', { align: 'center' });
+    doc.moveDown(1.5);
+
+    const rows = [
+      ['Patient Name', booking.patientInfo.fullName],
+      ['Phone', booking.patientInfo.phone],
+      ['Email', booking.patientInfo.email],
+      ['Sample ID', result.sampleId],
+      ['Sample Type', result.test?.sampleType || 'N/A'],
+      ['Test Name', result.testName],
+      ['Result', `${result.observedValue} ${result.unit}`],
+      ['Reference Range', `${result.referenceRange.min} - ${result.referenceRange.max} ${result.unit}`],
+      ['Result Flag', result.flag],
+      ['Approval Status', result.approvalStatus],
+      ['Approved By', result.approvedBy || 'Doctor'],
+      ['Approved On', result.approvedAt ? new Date(result.approvedAt).toLocaleString() : 'N/A'],
+      ['Booking Date', new Date(booking.createdAt).toLocaleDateString()],
+    ];
+
+    for (const [label, value] of rows) {
+      doc.font('Helvetica-Bold').text(`${label}: `, { continued: true });
+      doc.font('Helvetica').text(String(value));
+      doc.moveDown(0.35);
+    }
 
     doc.moveDown();
-
-    doc.fontSize(12).text(`Patient Name: ${report.patientName}`);
-    doc.text(`Phone: ${report.phone}`);
-    doc.text(`Sample ID: ${report.sampleId}`);
-    doc.text(`Test Name: ${report.testName}`);
-    doc.text(`Result: ${report.resultValue}`);
-    doc.text(`Unit: ${report.unit}`);
-    doc.text(`Reference Range: ${report.referenceRange}`);
-    doc.text(`Result Flag: ${report.resultFlag}`);
-    doc.text(`Approval Status: ${report.approvalStatus}`);
-    doc.text(`Report Date: ${new Date(report.reportDate).toDateString()}`);
-
-    doc.moveDown();
-    doc.text('This is a system generated diagnostic report.');
-
+    doc.fontSize(10).fillColor('#666666').text('This is a system-generated report.', { align: 'center' });
     doc.end();
   } catch (error) {
-    res.status(500).json({
-      message: 'Failed to download report',
-      error: error.message,
-    });
+    if (!res.headersSent) {
+      res.status(500).json({ message: 'Failed to download report', error: error.message });
+    }
   }
 };
 
-module.exports = {
-  createReport,
-  getAllReports,
-  getReportHistory,
-  downloadReport,
-};
+module.exports = { getMyReports, getReport, downloadReport };

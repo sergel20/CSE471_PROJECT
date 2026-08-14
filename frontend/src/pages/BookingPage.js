@@ -49,6 +49,7 @@ function BookingPage() {
   const [preview, setPreview] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const [bookingRequest, setBookingRequest] = useState(null);
 
   useEffect(() => {
     const fetchTests = async () => {
@@ -98,6 +99,22 @@ function BookingPage() {
     }
   };
 
+  const handleProceedPayment = async () => {
+    setSubmitting(true);
+    setSubmitError('');
+    try {
+      const { data } = await apiClient.post('/bookings', {
+        testIds: selectedIds,
+        patientInfo,
+      });
+      setBookingRequest(data);
+    } catch (err) {
+      setSubmitError(err.response?.data?.message || 'Failed to send the payment confirmation request.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       <StepIndicator step={step} />
@@ -125,7 +142,16 @@ function BookingPage() {
         />
       )}
 
-      {step === 3 && preview && <FinalSummary preview={preview} onBack={() => setStep(2)} />}
+      {step === 3 && preview && (
+        <FinalSummary
+          preview={preview}
+          onBack={() => setStep(2)}
+          onProceedPayment={handleProceedPayment}
+          submitting={submitting}
+          submitError={submitError}
+          bookingRequest={bookingRequest}
+        />
+      )}
     </div>
   );
 }

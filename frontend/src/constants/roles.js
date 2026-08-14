@@ -29,5 +29,5 @@ export const ROLE_HOME = {
   [ROLES.DONOR]: '/donor-profile',
   [ROLES.HOSPITAL_STAFF]: '/dashboard',
   [ROLES.PHARMACY]: '/dashboard',
-  [ROLES.ADMIN]: '/tests',
+  [ROLES.ADMIN]: '/admin/bookings',
 };

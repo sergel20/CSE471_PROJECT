@@ -4,7 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node index.js",
+    "seed": "node seed.js",
+    "migrate:workflow": "node migrateWorkflow.js",
+    "test": "node --test"
   },
   "keywords": [],
   "author": "",

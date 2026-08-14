@@ -1,7 +1,4 @@
-import { useState } from 'react';
-
-function FinalSummary({ preview, onBack }) {
-  const [paymentMessage, setPaymentMessage] = useState('');
+function FinalSummary({ preview, onBack, onProceedPayment, submitting, submitError, bookingRequest }) {
   const { tests, patientInfo, preferredDate, totalPrice, paymentStatus } = preview;
 
   return (
@@ -50,9 +47,15 @@ function FinalSummary({ preview, onBack }) {
         <span className="text-xl font-bold text-sky-700">৳{totalPrice}</span>
       </div>
 
-      {paymentMessage && (
-        <p className="text-sm text-sky-700 bg-sky-50 border border-sky-200 rounded-lg px-4 py-2 mb-4">
-          {paymentMessage}
+      {bookingRequest && (
+        <p className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-3 mb-4">
+          {bookingRequest.message} Booking ID: {bookingRequest.booking?._id}
+        </p>
+      )}
+
+      {submitError && (
+        <p className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-4 py-3 mb-4">
+          {submitError}
         </p>
       )}
 
@@ -60,16 +63,18 @@ function FinalSummary({ preview, onBack }) {
         <button
           type="button"
           onClick={onBack}
+          disabled={submitting || Boolean(bookingRequest)}
           className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
         >
           Back
         </button>
         <button
           type="button"
-          onClick={() => setPaymentMessage('Payment feature coming soon.')}
-          className="flex-1 py-2 rounded-lg font-medium bg-sky-600 text-white hover:bg-sky-700"
+          onClick={onProceedPayment}
+          disabled={submitting || Boolean(bookingRequest)}
+          className="flex-1 py-2 rounded-lg font-medium bg-sky-600 text-white hover:bg-sky-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
         >
-          Proceed to Payment
+          {bookingRequest ? 'Request Sent' : submitting ? 'Sending Request...' : 'Proceed to Payment'}
         </button>
       </div>
     </div>

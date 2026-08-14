@@ -12,7 +12,7 @@ const connectDB = async () => {
     console.log('🚀 MongoDB connected successfully for MediLab Connect!');
   } catch (error) {
     console.error(' Database connection failed:', error.message);
-    process.exit(1); // Crash app immediately if DB isn't available
+    throw error;
   }
 };
 
