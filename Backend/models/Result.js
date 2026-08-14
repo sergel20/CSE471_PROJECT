@@ -14,6 +14,15 @@ const ResultSchema = new mongoose.Schema({
     required: true,
     enum: ['Normal', 'High', 'Low', 'Abnormal'] 
   }
+  ,
+  approvalStatus: {
+    type: String,
+    enum: ['Pending Approval', 'Approved', 'Rejected'],
+    default: 'Pending Approval',
+  },
+  approvedBy: { type: String, default: null },
+  rejectionReason: { type: String, default: null },
+  approvedAt: { type: Date, default: null },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Result', ResultSchema);

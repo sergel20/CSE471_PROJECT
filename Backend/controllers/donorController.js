@@ -1,0 +1,115 @@
+const Donor = require('../models/Donor');
+const DonationHistory = require('../models/DonationHistory');
+const DonationRequest = require('../models/DonationRequest');
+
+// Fields the normal profile-update endpoint is allowed to touch. lastDonationDate is
+// deliberately excluded — after initial creation it can only change when an incoming
+// donation request is accepted (see donationRequestController.acceptRequest).
+const EDITABLE_FIELDS = ['fullName', 'bloodGroup', 'age', 'phone', 'location'];
+
+function pickEditableFields(source) {
+  const picked = {};
+  for (const field of EDITABLE_FIELDS) {
+    if (source[field] !== undefined) picked[field] = source[field];
+  }
+  return picked;
+}
+
+// Attaches the calculated eligibility result to a donor document before sending it to the client.
+// Exported for reuse by donationRequestController, which needs the same shape after Accept.
+function withEligibility(donor) {
+  const obj = donor.toObject();
+  obj.eligibility = donor.getEligibility();
+  return obj;
+}
+
+// Mongo raises a duplicate-key error (code 11000) when a unique constraint is violated;
+// surface that as a clear message instead of the raw driver error.
+function isDuplicateKeyError(error, field) {
+  return error.code === 11000 && error.keyPattern && error.keyPattern[field];
+}
+
+// GET: Fetch the logged-in user's own donor profile
+const getMyDonor = async (req, res) => {
+  try {
+    const donor = await Donor.findOne({ user: req.user.id });
+    if (!donor) {
+      return res.status(404).json({ message: 'You have not created a donor profile yet.' });
+    }
+    res.status(200).json(withEligibility(donor));
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching donor profile', error: error.message });
+  }
+};
+
+// PUT: Create or update the logged-in user's own profile information (one profile per
+// account, so this always updates the same record). Only EDITABLE_FIELDS are ever written,
+// so lastDonationDate (and anything else, like `user`) can't be touched on an existing
+// profile through this endpoint — the one exception is initial creation, where the donor is
+// allowed to declare a prior donation date (see below).
+const upsertMyDonor = async (req, res) => {
+  try {
+    const updates = pickEditableFields(req.body);
+    let donor = await Donor.findOne({ user: req.user.id });
+
+    if (donor) {
+      Object.assign(donor, updates);
+    } else {
+      if (req.body.lastDonationDate) {
+        const initialDate = new Date(req.body.lastDonationDate);
+        if (Number.isNaN(initialDate.getTime()) || initialDate > new Date()) {
+          return res.status(400).json({ message: 'Last donation date must be a valid date in the past.' });
+        }
+        updates.lastDonationDate = initialDate;
+      }
+      donor = new Donor({ ...updates, user: req.user.id });
+    }
+
+    const saved = await donor.save();
+    res.status(200).json(withEligibility(saved));
+  } catch (error) {
+    if (isDuplicateKeyError(error, 'phone')) {
+      return res.status(409).json({
+        message: 'Another donor profile is already using this phone number.',
+      });
+    }
+    res.status(400).json({ message: 'Error saving donor profile', error: error.message });
+  }
+};
+
+// DELETE: Delete the logged-in user's own donor profile
+const deleteMyDonor = async (req, res) => {
+  try {
+    const deleted = await Donor.findOneAndDelete({ user: req.user.id });
+    if (!deleted) {
+      return res.status(404).json({ message: 'You have not created a donor profile yet.' });
+    }
+    await DonationHistory.deleteMany({ donor: deleted._id });
+    await DonationRequest.deleteMany({ donor: deleted._id });
+    res.status(200).json({ message: 'Donor profile deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error deleting donor profile', error: error.message });
+  }
+};
+
+// GET: List the logged-in user's past donation records, most recent first
+const getMyDonationHistory = async (req, res) => {
+  try {
+    const donor = await Donor.findOne({ user: req.user.id });
+    if (!donor) {
+      return res.status(404).json({ message: 'You have not created a donor profile yet.' });
+    }
+    const history = await DonationHistory.find({ donor: donor._id }).sort({ donationDate: -1 });
+    res.status(200).json(history);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching donation history', error: error.message });
+  }
+};
+
+module.exports = {
+  getMyDonor,
+  upsertMyDonor,
+  deleteMyDonor,
+  getMyDonationHistory,
+  withEligibility,
+};
