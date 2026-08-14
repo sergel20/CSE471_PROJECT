@@ -21,7 +21,7 @@ function LoginPage() {
 
     try {
       await login(form.email.trim(), form.password);
-      navigate('/donor-profile');
+      navigate('/');
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to log in.');
     } finally {

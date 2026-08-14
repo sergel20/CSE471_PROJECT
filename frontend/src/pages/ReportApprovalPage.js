@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import apiClient from '../api/client';
+import { useAuth } from '../context/AuthContext';
+import { ROLES } from '../constants/roles';
 
 function formatDateTime(value) {
   if (!value) return 'N/A';
@@ -21,6 +23,8 @@ function FlagBadge({ flag }) {
 }
 
 function ReportApprovalPage() {
+  const { user } = useAuth();
+  const isApprover = user?.role === ROLES.DOCTOR || user?.role === ROLES.ADMIN;
   const [pending, setPending] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -46,8 +50,13 @@ function ReportApprovalPage() {
   };
 
   useEffect(() => {
-    loadPending();
-  }, []);
+    if (isApprover) {
+      loadPending();
+    } else {
+      setLoading(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isApprover]);
 
   const handleApprove = async (resultId) => {
     setActingId(resultId);
@@ -108,10 +117,13 @@ function ReportApprovalPage() {
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Doctor report approval</h1>
+        <h1 className="text-3xl font-bold text-gray-900">
+          {isApprover ? 'Doctor report approval' : 'My Reports'}
+        </h1>
         <p className="mt-2 text-sm text-gray-500">
-          Review entered results and approve or reject them. Patients can only view or download a
-          report once it has been approved.
+          {isApprover
+            ? 'Review entered results and approve or reject them. Patients can only view or download a report once it has been approved.'
+            : 'Look up a report by ID to view or download it. Reports are only available once a doctor has approved them.'}
         </p>
       </div>
 
@@ -128,6 +140,7 @@ function ReportApprovalPage() {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        {isApprover && (
         <section className="lg:col-span-3 bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold text-gray-900">Pending approval</h2>
@@ -190,11 +203,16 @@ function ReportApprovalPage() {
             </div>
           )}
         </section>
+        )}
 
-        <section className="lg:col-span-2 bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Patient report view</h2>
+        <section className={`${isApprover ? 'lg:col-span-2' : 'lg:col-span-5 max-w-xl mx-auto w-full'} bg-white rounded-2xl border border-gray-200 shadow-sm p-6`}>
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">
+            {isApprover ? 'Patient report view' : 'View / download a report'}
+          </h2>
           <p className="text-sm text-gray-500 mb-4">
-            Enter a result ID to check if the patient can view/download it yet.
+            {isApprover
+              ? 'Enter a result ID to check if the patient can view/download it yet.'
+              : 'Enter your report ID to view it. It will only appear once a doctor has approved it.'}
           </p>
 
           <form onSubmit={handleLookup} className="flex gap-3 mb-5">

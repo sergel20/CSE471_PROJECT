@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import apiClient from '../api/client';
+import { useAuth } from '../context/AuthContext';
+import { ROLES } from '../constants/roles';
 
 const STATUS_STEPS = [
   'Booked',
@@ -39,6 +41,8 @@ function StatusBadge({ status }) {
 }
 
 function SampleStatusPage() {
+  const { user } = useAuth();
+  const isStaff = user?.role === ROLES.LAB_STAFF || user?.role === ROLES.ADMIN;
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -112,10 +116,13 @@ function SampleStatusPage() {
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Sample status tracking</h1>
+        <h1 className="text-3xl font-bold text-gray-900">
+          {isStaff ? 'Sample status management' : 'Track your sample'}
+        </h1>
         <p className="mt-2 text-sm text-gray-500">
-          Patients can track their sample here. Lab staff can move a booking through each stage,
-          step by step.
+          {isStaff
+            ? 'Search any booking and move it through each stage, step by step.'
+            : 'Track the progress of your own diagnostic test bookings.'}
         </p>
       </div>
 
@@ -138,28 +145,30 @@ function SampleStatusPage() {
             <span className="text-sm text-gray-500">{bookings.length} total</span>
           </div>
 
-          <form onSubmit={handleSearch} className="flex gap-3 mb-5">
-            <input
-              type="text"
-              value={emailFilter}
-              onChange={(e) => setEmailFilter(e.target.value)}
-              placeholder="Filter by patient email"
-              className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200"
-            />
-            <button
-              type="submit"
-              className="rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700"
-            >
-              Search
-            </button>
-            <button
-              type="button"
-              onClick={handleClear}
-              className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-            >
-              Clear
-            </button>
-          </form>
+          {isStaff && (
+            <form onSubmit={handleSearch} className="flex gap-3 mb-5">
+              <input
+                type="text"
+                value={emailFilter}
+                onChange={(e) => setEmailFilter(e.target.value)}
+                placeholder="Filter by patient email"
+                className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200"
+              />
+              <button
+                type="submit"
+                className="rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700"
+              >
+                Search
+              </button>
+              <button
+                type="button"
+                onClick={handleClear}
+                className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Clear
+              </button>
+            </form>
+          )}
 
           {loading ? (
             <p className="text-gray-500">Loading bookings...</p>
@@ -198,7 +207,7 @@ function SampleStatusPage() {
                           onClick={() => handleSelect(booking)}
                           className="rounded-lg border border-sky-600 px-3 py-1.5 text-sky-700 hover:bg-sky-50"
                         >
-                          View / Update
+                          {isStaff ? 'View / Update' : 'View Details'}
                         </button>
                       </td>
                     </tr>
@@ -210,10 +219,16 @@ function SampleStatusPage() {
         </section>
 
         <section className="lg:col-span-2 bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Update status</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">
+            {isStaff ? 'Update status' : 'Booking details'}
+          </h2>
 
           {!selectedBooking ? (
-            <p className="text-gray-500">Select a booking from the list to update its status.</p>
+            <p className="text-gray-500">
+              {isStaff
+                ? 'Select a booking from the list to update its status.'
+                : 'Select a booking from the list to view its details.'}
+            </p>
           ) : (
             <div className="space-y-5">
               <div>
@@ -228,33 +243,37 @@ function SampleStatusPage() {
                 <StatusBadge status={selectedBooking.sampleStatus} />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Move to status
-                </label>
-                <select
-                  value={nextStatus}
-                  onChange={(e) => setNextStatus(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200"
-                >
-                  {STATUS_STEPS.map((step) => (
-                    <option key={step} value={step}>
-                      {step}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {isStaff && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Move to status
+                    </label>
+                    <select
+                      value={nextStatus}
+                      onChange={(e) => setNextStatus(e.target.value)}
+                      className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200"
+                    >
+                      {STATUS_STEPS.map((step) => (
+                        <option key={step} value={step}>
+                          {step}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-              <button
-                type="button"
-                onClick={handleUpdateStatus}
-                disabled={updating}
-                className={`w-full rounded-lg px-4 py-2 font-semibold text-white transition ${
-                  updating ? 'bg-gray-300 cursor-not-allowed' : 'bg-sky-600 hover:bg-sky-700'
-                }`}
-              >
-                {updating ? 'Updating...' : 'Update status'}
-              </button>
+                  <button
+                    type="button"
+                    onClick={handleUpdateStatus}
+                    disabled={updating}
+                    className={`w-full rounded-lg px-4 py-2 font-semibold text-white transition ${
+                      updating ? 'bg-gray-300 cursor-not-allowed' : 'bg-sky-600 hover:bg-sky-700'
+                    }`}
+                  >
+                    {updating ? 'Updating...' : 'Update status'}
+                  </button>
+                </>
+              )}
 
               <div>
                 <p className="text-sm font-medium text-gray-700 mb-2">Status history</p>
