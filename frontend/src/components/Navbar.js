@@ -9,6 +9,8 @@ const NAV_ITEMS_BY_ROLE = {
     { label: 'Book Tests', to: '/booking' },
     { label: 'Sample Status', to: '/sample-status' },
     { label: 'Reports', to: '/report-approval' },
+    { label: 'Available Blood', to: '/blood' },
+    { label: 'Cart', to: '/cart' },
   ],
   [ROLES.LAB_STAFF]: [
     { label: 'Results', to: '/results' },
@@ -16,7 +18,10 @@ const NAV_ITEMS_BY_ROLE = {
   ],
   [ROLES.DOCTOR]: [{ label: 'Report Approval', to: '/report-approval' }],
   [ROLES.DONOR]: [{ label: 'Donor Profile', to: '/donor-profile' }],
-  [ROLES.HOSPITAL_STAFF]: [{ label: 'Dashboard', to: '/dashboard' }],
+  [ROLES.HOSPITAL_STAFF]: [
+  { label: 'Dashboard', to: '/dashboard' },
+  { label: 'Blood Inventory', to: '/inventory' },
+  ],
   [ROLES.PHARMACY]: [{ label: 'Dashboard', to: '/dashboard' }],
   [ROLES.ADMIN]: [
     { label: 'Bookings', to: '/admin/bookings' },

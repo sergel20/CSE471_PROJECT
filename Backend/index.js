@@ -14,7 +14,8 @@ const reportApprovalRoutes = require('./routes/reportApprovalRoutes');
 const reportRoutes = require('./routes/reportRoutes');
 const donorRoutes = require('./routes/donorRoutes');
 const donationRequestRoutes = require('./routes/donationRequestRoutes');
-
+const bloodInventoryRoutes = require('./routes/bloodInventoryRoutes');
+const cartRoutes = require('./routes/cartRoutes');
 const app = express();
 
 app.use(cors());
@@ -29,7 +30,8 @@ app.use('/api/report-approval', reportApprovalRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/donors', donorRoutes);
 app.use('/api/donation-requests', donationRequestRoutes);
-
+app.use('/api/blood-inventory', bloodInventoryRoutes);
+app.use('/api/cart', cartRoutes);
 app.get('/', (req, res) => res.send('API Running'));
 
 const PORT = process.env.PORT || 1520;
