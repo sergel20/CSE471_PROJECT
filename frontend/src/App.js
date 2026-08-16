@@ -10,6 +10,7 @@ import ResultManagementPage from './pages/ResultManagementPage';
 import SampleStatusPage from './pages/SampleStatusPage';
 import ReportApprovalPage from './pages/ReportApprovalPage';
 import MyDonorProfilePage from './pages/MyDonorProfilePage';
+import EmergencyBloodRequestPage from './pages/EmergencyBloodRequestPage';
 import AdminUsersPage from './pages/AdminUsersPage';
 import AdminBookingsPage from './pages/AdminBookingsPage';
 import PlaceholderDashboardPage from './pages/PlaceholderDashboardPage';
@@ -98,6 +99,14 @@ function AppShell() {
           element={
             <RequireRole roles={[ROLES.DONOR]}>
               <MyDonorProfilePage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="/blood-request"
+          element={
+            <RequireRole roles={[ROLES.PATIENT, ROLES.HOSPITAL_STAFF]}>
+              <EmergencyBloodRequestPage />
             </RequireRole>
           }
         />

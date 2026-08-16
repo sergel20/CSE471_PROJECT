@@ -10,6 +10,7 @@ const emptyForm = {
   phone: '',
   location: '',
   lastDonationDate: '',
+  available: true,
 };
 
 function formatDate(value) {
@@ -139,6 +140,7 @@ function MyDonorProfilePage() {
       phone: data.phone || '',
       location: data.location || '',
       lastDonationDate: '',
+      available: data.available ?? true,
     });
   };
 
@@ -177,8 +179,8 @@ function MyDonorProfilePage() {
   }, []);
 
   const handleChange = (event) => {
-    const { name, value } = event.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+    const { name, value, type, checked } = event.target;
+    setForm((prev) => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
   };
 
   const handleSubmit = async (event) => {
@@ -193,6 +195,7 @@ function MyDonorProfilePage() {
       age: Number(form.age),
       phone: form.phone.trim(),
       location: form.location.trim(),
+      available: form.available,
     };
     // Only meaningful (and only accepted by the backend) on initial profile creation.
     if (!hasProfile && form.lastDonationDate) {
@@ -323,6 +326,18 @@ function MyDonorProfilePage() {
                   <dt className="text-gray-500">Location</dt>
                   <dd className="font-medium text-gray-900">{form.location}</dd>
                 </div>
+                <div className="flex justify-between">
+                  <dt className="text-gray-500">Available to Donate</dt>
+                  <dd>
+                    <span
+                      className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${
+                        form.available ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-600'
+                      }`}
+                    >
+                      {form.available ? 'Available' : 'Unavailable'}
+                    </span>
+                  </dd>
+                </div>
               </dl>
 
               <div className="flex flex-wrap gap-3">
@@ -414,6 +429,20 @@ function MyDonorProfilePage() {
                     />
                   </div>
                 </div>
+
+                <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                  <input
+                    name="available"
+                    type="checkbox"
+                    checked={form.available}
+                    onChange={handleChange}
+                    className="h-4 w-4 rounded border-gray-300 text-sky-600 focus:ring-sky-200"
+                  />
+                  Currently available to donate
+                </label>
+                <p className="-mt-3 text-xs text-gray-400">
+                  Turn this off if you don't want to be matched to emergency blood requests right now.
+                </p>
 
                 {!hasProfile && (
                   <div>

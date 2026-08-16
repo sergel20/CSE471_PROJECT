@@ -1,11 +1,12 @@
 const Donor = require('../models/Donor');
 const DonationHistory = require('../models/DonationHistory');
 const DonationRequest = require('../models/DonationRequest');
+const { geocodeLocation } = require('../library/geocode');
 
 // Fields the normal profile-update endpoint is allowed to touch. lastDonationDate is
 // deliberately excluded — after initial creation it can only change when an incoming
 // donation request is accepted (see donationRequestController.acceptRequest).
-const EDITABLE_FIELDS = ['fullName', 'bloodGroup', 'age', 'phone', 'location'];
+const EDITABLE_FIELDS = ['fullName', 'bloodGroup', 'age', 'phone', 'location', 'available'];
 
 function pickEditableFields(source) {
   const picked = {};
@@ -51,6 +52,7 @@ const upsertMyDonor = async (req, res) => {
   try {
     const updates = pickEditableFields(req.body);
     let donor = await Donor.findOne({ user: req.user.id });
+    const locationChanged = !donor || (updates.location !== undefined && updates.location !== donor.location);
 
     if (donor) {
       Object.assign(donor, updates);
@@ -63,6 +65,17 @@ const upsertMyDonor = async (req, res) => {
         updates.lastDonationDate = initialDate;
       }
       donor = new Donor({ ...updates, user: req.user.id });
+    }
+
+    // Re-resolve coordinates whenever the donor's location text changes, so nearby-donor
+    // matching (library/donorMatching.js) can find them. Geocoding failure isn't fatal —
+    // the profile still saves with its previous/absent coordinates; the donor just won't
+    // surface in distance-ranked matches until it succeeds on a later save.
+    if (locationChanged && donor.location) {
+      const geo = await geocodeLocation(donor.location);
+      if (geo) {
+        donor.geoLocation = { type: 'Point', coordinates: [geo.lon, geo.lat] };
+      }
     }
 
     const saved = await donor.save();

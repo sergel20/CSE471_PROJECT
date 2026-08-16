@@ -1,13 +1,28 @@
 const mongoose = require('mongoose');
 
-// Minimal shared data contract for donation requests. Creating requests and matching them
-// to nearby donors is owned by another feature — this model only carries the fields the
-// donor-side Accept/Reject flow needs to display and act on.
+// One emergency blood request submission fans out into one DonationRequest document per
+// matched donor (see library/donorMatching.js + controllers/donationRequestController.js
+// createEmergencyRequest), so each donor can independently Accept/Reject. `requestGroupId`
+// ties all the fan-out documents from a single submission back together.
 const DonationRequestSchema = new mongoose.Schema({
   donor: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Donor',
     required: true, // the donor this request has been made available to
+  },
+  requestGroupId: {
+    type: String,
+    required: true,
+    index: true,
+  },
+  requestedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null, // the patient/hospital_staff user who submitted the emergency request
+  },
+  distanceKm: {
+    type: Number,
+    default: null, // distance from the request location to this donor at match time; null if either location could not be geocoded
   },
   bloodGroup: {
     type: String,

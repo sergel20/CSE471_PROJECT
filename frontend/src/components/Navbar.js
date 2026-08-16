@@ -1,6 +1,8 @@
+import { useEffect, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { ROLES, ROLE_LABELS } from '../constants/roles';
+import apiClient from '../api/client';
 
 // Which nav links each role is allowed to see. Kept in lockstep with the
 // route guards in App.js and the backend's requireRole checks.
@@ -9,6 +11,7 @@ const NAV_ITEMS_BY_ROLE = {
     { label: 'Book Tests', to: '/booking' },
     { label: 'Sample Status', to: '/sample-status' },
     { label: 'Reports', to: '/report-approval' },
+    { label: 'Blood Request', to: '/blood-request' },
   ],
   [ROLES.LAB_STAFF]: [
     { label: 'Results', to: '/results' },
@@ -16,7 +19,10 @@ const NAV_ITEMS_BY_ROLE = {
   ],
   [ROLES.DOCTOR]: [{ label: 'Report Approval', to: '/report-approval' }],
   [ROLES.DONOR]: [{ label: 'Donor Profile', to: '/donor-profile' }],
-  [ROLES.HOSPITAL_STAFF]: [{ label: 'Dashboard', to: '/dashboard' }],
+  [ROLES.HOSPITAL_STAFF]: [
+    { label: 'Dashboard', to: '/dashboard' },
+    { label: 'Blood Request', to: '/blood-request' },
+  ],
   [ROLES.PHARMACY]: [{ label: 'Dashboard', to: '/dashboard' }],
   [ROLES.ADMIN]: [
     { label: 'Bookings', to: '/admin/bookings' },
@@ -25,10 +31,42 @@ const NAV_ITEMS_BY_ROLE = {
   ],
 };
 
+const PENDING_REQUEST_POLL_MS = 30000;
+
+// Lets a donor notice a new emergency-request match without having to open their profile —
+// polls the same pending-requests list MyDonorProfilePage already displays.
+function usePendingDonationRequestCount(isDonor) {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    if (!isDonor) return undefined;
+
+    let cancelled = false;
+    const fetchCount = async () => {
+      try {
+        const { data } = await apiClient.get('/donation-requests/me');
+        if (!cancelled) setCount(Array.isArray(data) ? data.length : 0);
+      } catch {
+        // Non-fatal: badge just stays at its last known value.
+      }
+    };
+
+    fetchCount();
+    const interval = setInterval(fetchCount, PENDING_REQUEST_POLL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [isDonor]);
+
+  return count;
+}
+
 function Navbar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const navItems = NAV_ITEMS_BY_ROLE[user?.role] || [];
+  const pendingRequestCount = usePendingDonationRequestCount(user?.role === ROLES.DONOR);
 
   const handleLogout = () => {
     logout();
@@ -56,6 +94,11 @@ function Navbar() {
               end={item.to === '/'}
             >
               {item.label}
+              {item.to === '/donor-profile' && pendingRequestCount > 0 && (
+                <span className="ml-1.5 inline-flex items-center rounded-full bg-red-600 px-1.5 py-0.5 text-xs font-semibold text-white">
+                  {pendingRequestCount}
+                </span>
+              )}
             </NavLink>
           ))}
 

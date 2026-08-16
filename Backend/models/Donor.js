@@ -39,6 +39,24 @@ const DonorSchema = new mongoose.Schema({
     required: true,
     trim: true,
   },
+  // GeoJSON coordinates for `location`, resolved via Nominatim whenever location is set/changed
+  // (see donorController.upsertMyDonor). `location` itself stays plain text for display; this
+  // is what nearby-donor matching actually queries against ($geoNear needs a 2dsphere index).
+  geoLocation: {
+    type: {
+      type: String,
+      enum: ['Point'],
+      default: 'Point',
+    },
+    coordinates: {
+      type: [Number], // [longitude, latitude]
+      default: undefined,
+    },
+  },
+  available: {
+    type: Boolean,
+    default: true, // whether the donor is currently willing to be matched to emergency requests
+  },
   lastDonationDate: {
     type: Date,
     default: null,
@@ -51,23 +69,27 @@ const DonorSchema = new mongoose.Schema({
   timestamps: true,
 });
 
-// Computes whether the donor currently meets all eligibility criteria to donate blood.
+DonorSchema.index({ geoLocation: '2dsphere' });
+
+// Computes whether a donor currently meets all eligibility criteria to donate blood.
 // Deliberately simple and centralized here: age range + minimum gap since last donation.
 // Change MIN_DONATION_AGE / MAX_DONATION_AGE / MIN_DAYS_BETWEEN_DONATIONS above to adjust the rule.
-DonorSchema.methods.getEligibility = function () {
+// Exported as a plain function (not just a schema method) so donor-matching can run it against
+// the plain objects returned by lean()/aggregate() queries, not just hydrated documents.
+function computeEligibility(donor) {
   const reasons = [];
   let nextEligibleDate = null;
 
-  if (this.age < MIN_DONATION_AGE || this.age > MAX_DONATION_AGE) {
+  if (donor.age < MIN_DONATION_AGE || donor.age > MAX_DONATION_AGE) {
     reasons.push(`Donor age must be between ${MIN_DONATION_AGE} and ${MAX_DONATION_AGE} years.`);
   }
 
-  if (this.lastDonationDate) {
-    const msSinceLastDonation = Date.now() - new Date(this.lastDonationDate).getTime();
+  if (donor.lastDonationDate) {
+    const msSinceLastDonation = Date.now() - new Date(donor.lastDonationDate).getTime();
     const daysSinceLastDonation = Math.floor(msSinceLastDonation / (1000 * 60 * 60 * 24));
 
     if (daysSinceLastDonation < MIN_DAYS_BETWEEN_DONATIONS) {
-      nextEligibleDate = new Date(this.lastDonationDate);
+      nextEligibleDate = new Date(donor.lastDonationDate);
       nextEligibleDate.setDate(nextEligibleDate.getDate() + MIN_DAYS_BETWEEN_DONATIONS);
       reasons.push(
         `Must wait ${MIN_DAYS_BETWEEN_DONATIONS - daysSinceLastDonation} more day(s) since last donation.`
@@ -80,6 +102,11 @@ DonorSchema.methods.getEligibility = function () {
     reasons,
     nextEligibleDate,
   };
+}
+
+DonorSchema.methods.getEligibility = function () {
+  return computeEligibility(this);
 };
 
 module.exports = mongoose.model('Donor', DonorSchema);
+module.exports.computeEligibility = computeEligibility;
