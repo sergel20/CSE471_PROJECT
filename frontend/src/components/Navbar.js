@@ -32,9 +32,13 @@ const NAV_ITEMS_BY_ROLE = {
 };
 
 const PENDING_REQUEST_POLL_MS = 30000;
+// MyDonorProfilePage fires this the moment an Accept/Reject succeeds, so the badge doesn't
+// have to wait for the next poll to reflect it.
+export const DONATION_REQUESTS_CHANGED_EVENT = 'donation-requests-changed';
 
 // Lets a donor notice a new emergency-request match without having to open their profile —
-// polls the same pending-requests list MyDonorProfilePage already displays.
+// polls the same pending-requests list MyDonorProfilePage already displays, and refreshes
+// immediately on DONATION_REQUESTS_CHANGED_EVENT.
 function usePendingDonationRequestCount(isDonor) {
   const [count, setCount] = useState(0);
 
@@ -53,9 +57,11 @@ function usePendingDonationRequestCount(isDonor) {
 
     fetchCount();
     const interval = setInterval(fetchCount, PENDING_REQUEST_POLL_MS);
+    window.addEventListener(DONATION_REQUESTS_CHANGED_EVENT, fetchCount);
     return () => {
       cancelled = true;
       clearInterval(interval);
+      window.removeEventListener(DONATION_REQUESTS_CHANGED_EVENT, fetchCount);
     };
   }, [isDonor]);
 

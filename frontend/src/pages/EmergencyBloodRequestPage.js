@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import apiClient from '../api/client';
 
 const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
@@ -11,7 +11,6 @@ const DISTANCE_FILTERS = [
   { label: 'Within 50 km', value: '50' },
   { label: 'Within 100 km', value: '100' },
 ];
-const STATUS_FILTERS = ['All', 'Pending', 'Accepted', 'Rejected'];
 
 const emptyForm = {
   bloodGroup: BLOOD_GROUPS[0],
@@ -23,13 +22,9 @@ const emptyForm = {
   contact: '',
 };
 
-const STATUS_STYLES = {
-  Pending: 'bg-amber-100 text-amber-700',
-  Accepted: 'bg-emerald-100 text-emerald-700',
-  Rejected: 'bg-red-100 text-red-700',
-};
+function DonorMatchCard({ match, onSend, sending }) {
+  const sent = match.status !== null;
 
-function DonorMatchCard({ match }) {
   return (
     <div className="border border-gray-200 rounded-lg p-4">
       <div className="flex items-start justify-between mb-2">
@@ -39,13 +34,13 @@ function DonorMatchCard({ match }) {
         </div>
         <span
           className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${
-            STATUS_STYLES[match.status] || 'bg-gray-100 text-gray-600'
+            sent ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-600'
           }`}
         >
-          {match.status}
+          {sent ? 'Sent' : 'Not sent'}
         </span>
       </div>
-      <dl className="grid grid-cols-2 gap-y-1 text-sm">
+      <dl className="grid grid-cols-2 gap-y-1 text-sm mb-4">
         <dt className="text-gray-500">Blood Group</dt>
         <dd className="text-right font-medium text-gray-900">{match.bloodGroup}</dd>
         <dt className="text-gray-500">Distance</dt>
@@ -59,6 +54,20 @@ function DonorMatchCard({ match }) {
           </a>
         </dd>
       </dl>
+      <button
+        type="button"
+        onClick={() => onSend(match)}
+        disabled={sent || sending}
+        className={`w-full rounded-lg px-3 py-2 text-sm font-semibold transition ${
+          sent
+            ? 'bg-emerald-50 text-emerald-700 cursor-default'
+            : sending
+            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+            : 'bg-sky-600 text-white hover:bg-sky-700'
+        }`}
+      >
+        {sent ? 'Request Sent' : sending ? 'Sending...' : 'Send Request'}
+      </button>
     </div>
   );
 }
@@ -66,11 +75,10 @@ function DonorMatchCard({ match }) {
 function EmergencyBloodRequestPage() {
   const [form, setForm] = useState(emptyForm);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
   const [result, setResult] = useState(null);
   const [maxDistanceKm, setMaxDistanceKm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('All');
-  const [refreshing, setRefreshing] = useState(false);
+  const [sendingDonorId, setSendingDonorId] = useState(null);
+  const [error, setError] = useState('');
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -89,52 +97,58 @@ function EmergencyBloodRequestPage() {
       });
       setResult(data);
       setMaxDistanceKm('');
-      setStatusFilter('All');
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to submit emergency blood request.');
+      setError(err.response?.data?.message || 'Failed to search for matching donors.');
     } finally {
       setSubmitting(false);
     }
   };
 
-  // Re-fetch the matched-donor list whenever a filter changes, so donors can be narrowed
-  // by distance or response status without re-submitting the request.
-  useEffect(() => {
-    if (!result?.requestGroupId) return;
+  const handleSend = async (match) => {
+    setSendingDonorId(match.donorId);
+    setError('');
 
-    const fetchMatches = async () => {
-      setRefreshing(true);
-      try {
-        const params = {};
-        if (maxDistanceKm) params.maxDistanceKm = maxDistanceKm;
-        if (statusFilter !== 'All') params.status = statusFilter;
-        const { data } = await apiClient.get(`/donation-requests/group/${result.requestGroupId}`, { params });
-        setResult((prev) => ({ ...prev, matchedCount: data.matchedCount, matches: data.matches }));
-      } catch (err) {
-        setError(err.response?.data?.message || 'Failed to refresh matched donors.');
-      } finally {
-        setRefreshing(false);
-      }
-    };
-    fetchMatches();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [maxDistanceKm, statusFilter]);
+    try {
+      const { data } = await apiClient.post('/donation-requests/send', {
+        donorId: match.donorId,
+        requestGroupId: result.requestGroupId,
+        bloodGroup: form.bloodGroup,
+        component: form.component,
+        requiredUnits: Number(form.requiredUnits),
+        hospital: form.hospital,
+        location: form.location,
+        urgency: form.urgency,
+        contact: form.contact,
+        distanceKm: match.distanceKm,
+      });
+      setResult((prev) => ({
+        ...prev,
+        matches: prev.matches.map((m) => (m.donorId === match.donorId ? { ...m, status: data.status } : m)),
+      }));
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to send request to this donor.');
+    } finally {
+      setSendingDonorId(null);
+    }
+  };
 
   const handleNewRequest = () => {
     setForm(emptyForm);
     setResult(null);
     setError('');
     setMaxDistanceKm('');
-    setStatusFilter('All');
   };
+
+  const visibleMatches = (result?.matches || []).filter(
+    (match) => !maxDistanceKm || match.distanceKm == null || match.distanceKm <= Number(maxDistanceKm)
+  );
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Emergency Blood Request</h1>
         <p className="mt-2 text-sm text-gray-500">
-          Submit an urgent blood request and the system will automatically match nearby, eligible,
-          available donors — closest first.
+          Search for nearby, eligible, available donors, then send a request to whichever ones you choose.
         </p>
       </div>
 
@@ -258,71 +272,59 @@ function EmergencyBloodRequestPage() {
                 submitting ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-sky-600 text-white hover:bg-sky-700'
               }`}
             >
-              {submitting ? 'Finding nearby donors...' : 'Submit Request & Find Donors'}
+              {submitting ? 'Finding nearby donors...' : 'Find Donors'}
             </button>
           </form>
         </div>
       ) : (
         <div>
-          <div className="mb-6 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 flex items-center justify-between">
+          <div className="mb-6 rounded-lg border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-700 flex items-center justify-between">
             <span>
-              Request submitted. {result.matchedCount} matching donor{result.matchedCount === 1 ? '' : 's'} notified
+              {result.matchedCount} eligible donor{result.matchedCount === 1 ? '' : 's'} found nearby
               {!result.geocoded && ' (location could not be pinpointed — showing all compatible donors regardless of distance)'}.
+              Send a request to whichever donor(s) you'd like to reach.
             </span>
             <button
               type="button"
               onClick={handleNewRequest}
-              className="ml-4 shrink-0 rounded-lg border border-emerald-300 px-3 py-1.5 text-sm font-medium text-emerald-700 hover:bg-emerald-100"
+              className="ml-4 shrink-0 rounded-lg border border-sky-300 px-3 py-1.5 text-sm font-medium text-sky-700 hover:bg-sky-100"
             >
-              New Request
+              New Search
             </button>
           </div>
 
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
             <div className="flex flex-wrap items-end justify-between gap-4 mb-4">
-              <h2 className="text-lg font-semibold text-gray-900">
-                Matched Donors {refreshing && <span className="text-sm font-normal text-gray-400">(refreshing...)</span>}
-              </h2>
-              <div className="flex flex-wrap gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">Distance</label>
-                  <select
-                    value={maxDistanceKm}
-                    onChange={(event) => setMaxDistanceKm(event.target.value)}
-                    className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200"
-                  >
-                    {DISTANCE_FILTERS.map((option) => (
-                      <option key={option.label} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">Status</label>
-                  <select
-                    value={statusFilter}
-                    onChange={(event) => setStatusFilter(event.target.value)}
-                    className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200"
-                  >
-                    {STATUS_FILTERS.map((status) => (
-                      <option key={status} value={status}>
-                        {status}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+              <h2 className="text-lg font-semibold text-gray-900">Matched Donors</h2>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Distance</label>
+                <select
+                  value={maxDistanceKm}
+                  onChange={(event) => setMaxDistanceKm(event.target.value)}
+                  className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200"
+                >
+                  {DISTANCE_FILTERS.map((option) => (
+                    <option key={option.label} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 
-            {result.matches.length === 0 ? (
+            {visibleMatches.length === 0 ? (
               <p className="text-sm text-gray-400">
                 No eligible, available donors found nearby for this blood group and filter combination.
               </p>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {result.matches.map((match) => (
-                  <DonorMatchCard key={match.requestId} match={match} />
+                {visibleMatches.map((match) => (
+                  <DonorMatchCard
+                    key={match.donorId}
+                    match={match}
+                    onSend={handleSend}
+                    sending={sendingDonorId === match.donorId}
+                  />
                 ))}
               </div>
             )}
