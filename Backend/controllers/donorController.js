@@ -4,9 +4,9 @@ const DonationRequest = require('../models/DonationRequest');
 const { geocodeLocation } = require('../library/geocode');
 
 // Fields the normal profile-update endpoint is allowed to touch. lastDonationDate is
-// deliberately excluded — after initial creation it can only change when an incoming
-// donation request is accepted (see donationRequestController.acceptRequest).
-const EDITABLE_FIELDS = ['fullName', 'bloodGroup', 'age', 'phone', 'location', 'available'];
+// donor-editable (e.g. to correct it or log a donation made outside the app) — accepting
+// a donation request (see donationRequestController.acceptRequest) also sets it automatically.
+const EDITABLE_FIELDS = ['fullName', 'bloodGroup', 'age', 'phone', 'location', 'available', 'lastDonationDate'];
 
 function pickEditableFields(source) {
   const picked = {};
@@ -45,25 +45,29 @@ const getMyDonor = async (req, res) => {
 
 // PUT: Create or update the logged-in user's own profile information (one profile per
 // account, so this always updates the same record). Only EDITABLE_FIELDS are ever written,
-// so lastDonationDate (and anything else, like `user`) can't be touched on an existing
-// profile through this endpoint — the one exception is initial creation, where the donor is
-// allowed to declare a prior donation date (see below).
+// so things like `user` can't be touched through this endpoint.
 const upsertMyDonor = async (req, res) => {
   try {
     const updates = pickEditableFields(req.body);
+
+    if (updates.lastDonationDate !== undefined) {
+      if (!updates.lastDonationDate) {
+        updates.lastDonationDate = null;
+      } else {
+        const parsedDate = new Date(updates.lastDonationDate);
+        if (Number.isNaN(parsedDate.getTime()) || parsedDate > new Date()) {
+          return res.status(400).json({ message: 'Last donation date must be a valid date in the past.' });
+        }
+        updates.lastDonationDate = parsedDate;
+      }
+    }
+
     let donor = await Donor.findOne({ user: req.user.id });
     const locationChanged = !donor || (updates.location !== undefined && updates.location !== donor.location);
 
     if (donor) {
       Object.assign(donor, updates);
     } else {
-      if (req.body.lastDonationDate) {
-        const initialDate = new Date(req.body.lastDonationDate);
-        if (Number.isNaN(initialDate.getTime()) || initialDate > new Date()) {
-          return res.status(400).json({ message: 'Last donation date must be a valid date in the past.' });
-        }
-        updates.lastDonationDate = initialDate;
-      }
       donor = new Donor({ ...updates, user: req.user.id });
     }
 

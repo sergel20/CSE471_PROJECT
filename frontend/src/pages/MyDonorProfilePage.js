@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import apiClient from '../api/client';
+import { DONATION_REQUESTS_CHANGED_EVENT } from '../components/Navbar';
 
 const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 
@@ -25,9 +26,7 @@ function EligibilitySection({ eligibility, lastDonationDate }) {
       <dl className="space-y-2 text-sm">
         <div className="flex justify-between">
           <dt className="text-gray-500">Last Donation</dt>
-          <dd className="font-medium text-gray-900">
-            {formatDate(lastDonationDate)} <span title="Read-only">🔒</span>
-          </dd>
+          <dd className="font-medium text-gray-900">{formatDate(lastDonationDate)}</dd>
         </div>
         <div className="flex justify-between">
           <dt className="text-gray-500">Status</dt>
@@ -139,7 +138,7 @@ function MyDonorProfilePage() {
       age: data.age ?? '',
       phone: data.phone || '',
       location: data.location || '',
-      lastDonationDate: '',
+      lastDonationDate: data.lastDonationDate ? data.lastDonationDate.slice(0, 10) : '',
       available: data.available ?? true,
     });
   };
@@ -196,11 +195,8 @@ function MyDonorProfilePage() {
       phone: form.phone.trim(),
       location: form.location.trim(),
       available: form.available,
+      lastDonationDate: form.lastDonationDate || null,
     };
-    // Only meaningful (and only accepted by the backend) on initial profile creation.
-    if (!hasProfile && form.lastDonationDate) {
-      payload.lastDonationDate = form.lastDonationDate;
-    }
 
     try {
       const { data } = await apiClient.put('/donors/me', payload);
@@ -244,6 +240,7 @@ function MyDonorProfilePage() {
       const { data } = await apiClient.put(`/donation-requests/${requestId}/accept`);
       applyDonorData(data.donor);
       setRequests((prev) => prev.filter((r) => r._id !== requestId));
+      window.dispatchEvent(new Event(DONATION_REQUESTS_CHANGED_EVENT));
       setMessage('Donation request accepted — donation recorded and eligibility updated.');
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to accept donation request.');
@@ -260,6 +257,7 @@ function MyDonorProfilePage() {
     try {
       await apiClient.put(`/donation-requests/${requestId}/reject`);
       setRequests((prev) => prev.filter((r) => r._id !== requestId));
+      window.dispatchEvent(new Event(DONATION_REQUESTS_CHANGED_EVENT));
       setMessage('Donation request rejected.');
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to reject donation request.');
@@ -444,25 +442,23 @@ function MyDonorProfilePage() {
                   Turn this off if you don't want to be matched to emergency blood requests right now.
                 </p>
 
-                {!hasProfile && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Last Donation Date (optional)
-                    </label>
-                    <input
-                      name="lastDonationDate"
-                      type="date"
-                      value={form.lastDonationDate}
-                      onChange={handleChange}
-                      max={new Date().toISOString().slice(0, 10)}
-                      className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200"
-                    />
-                    <p className="mt-1 text-xs text-gray-400">
-                      Leave blank if you've never donated before. This can only be set now — once your
-                      profile is created it becomes read-only and updates automatically when you donate.
-                    </p>
-                  </div>
-                )}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Last Donation Date (optional)
+                  </label>
+                  <input
+                    name="lastDonationDate"
+                    type="date"
+                    value={form.lastDonationDate}
+                    onChange={handleChange}
+                    max={new Date().toISOString().slice(0, 10)}
+                    className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200"
+                  />
+                  <p className="mt-1 text-xs text-gray-400">
+                    Leave blank if you've never donated before. Accepting a donation request also
+                    updates this automatically.
+                  </p>
+                </div>
 
                 <div className="flex gap-3">
                   <button

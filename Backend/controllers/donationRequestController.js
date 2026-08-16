@@ -8,6 +8,18 @@ const { findMatchingDonors } = require('../library/donorMatching');
 const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 const REQUIRED_REQUEST_FIELDS = ['bloodGroup', 'component', 'requiredUnits', 'hospital', 'location', 'urgency', 'contact'];
 
+// Shared by search and send — checks the request-detail fields are present and valid.
+function validateRequestFields(body) {
+  const missing = REQUIRED_REQUEST_FIELDS.filter((field) => body[field] === undefined || body[field] === '');
+  if (missing.length > 0) {
+    return `Missing required field(s): ${missing.join(', ')}`;
+  }
+  if (!BLOOD_GROUPS.includes(body.bloodGroup)) {
+    return 'Invalid blood group.';
+  }
+  return null;
+}
+
 // Looks up the request and, if the atomic status-flip failed, figures out why (not found /
 // not owned by this donor / already responded) so the caller can return the right error.
 async function diagnoseFailedResponse(requestId, donorId) {
@@ -37,56 +49,82 @@ function formatMatch({ requestId, donor, distanceKm, status }) {
   };
 }
 
-// POST: Submit an emergency blood request. Resolves the request location to coordinates,
-// finds compatible/available/eligible donors ranked by proximity, and fans the request out
-// into one Pending DonationRequest per matched donor — this is what makes the request appear
-// in each matched donor's "My Donor Profile" pending list (getMyRequests) so they can Accept/Reject.
-const createEmergencyRequest = async (req, res) => {
+// POST: Search for nearby, compatible, available, eligible donors for an emergency blood
+// request. This only searches — no DonationRequest is created here, so nothing is sent to
+// any donor yet. The requester reviews the matched donors and explicitly sends a request to
+// whichever ones they choose, one at a time (see sendDonationRequest below).
+const searchMatchingDonors = async (req, res) => {
   try {
-    const missing = REQUIRED_REQUEST_FIELDS.filter((field) => req.body[field] === undefined || req.body[field] === '');
-    if (missing.length > 0) {
-      return res.status(400).json({ message: `Missing required field(s): ${missing.join(', ')}` });
+    const validationError = validateRequestFields(req.body);
+    if (validationError) {
+      return res.status(400).json({ message: validationError });
     }
 
-    const { bloodGroup, component, requiredUnits, hospital, location, urgency, contact } = req.body;
-    if (!BLOOD_GROUPS.includes(bloodGroup)) {
-      return res.status(400).json({ message: 'Invalid blood group.' });
-    }
-
+    const { bloodGroup, location } = req.body;
     const maxDistanceKm = Number(req.body.maxDistanceKm) || undefined;
     const { requestGeo, matches } = await findMatchingDonors({ bloodGroup, location, maxDistanceKm });
 
     const requestGroupId = crypto.randomUUID();
-    const createdDocs = matches.length > 0
-      ? await DonationRequest.insertMany(
-          matches.map(({ donor, distanceKm }) => ({
-            donor: donor._id,
-            bloodGroup,
-            component,
-            requiredUnits,
-            hospital,
-            location,
-            urgency,
-            contact,
-            requestGroupId,
-            distanceKm,
-            requestedBy: req.user.id,
-          }))
-        )
-      : [];
-
-    const responseMatches = matches.map((match, index) =>
-      formatMatch({ requestId: createdDocs[index]._id, donor: match.donor, distanceKm: match.distanceKm, status: 'Pending' })
+    const responseMatches = matches.map((match) =>
+      formatMatch({ requestId: null, donor: match.donor, distanceKm: match.distanceKm, status: null })
     );
 
-    res.status(201).json({
+    res.status(200).json({
       requestGroupId,
       geocoded: !!requestGeo,
       matchedCount: responseMatches.length,
       matches: responseMatches,
     });
   } catch (error) {
-    res.status(400).json({ message: 'Error creating emergency blood request', error: error.message });
+    res.status(400).json({ message: 'Error searching for matching donors', error: error.message });
+  }
+};
+
+// POST: Send the emergency request to one donor chosen from the search results. This is
+// what actually creates the DonationRequest — it's what makes the request appear in that
+// donor's "My Donor Profile" pending list (getMyRequests) so they can Accept/Reject.
+// requestGroupId ties every donor sent-to from the same search back together.
+const sendDonationRequest = async (req, res) => {
+  try {
+    const validationError = validateRequestFields(req.body);
+    if (validationError) {
+      return res.status(400).json({ message: validationError });
+    }
+
+    const {
+      donorId, requestGroupId, bloodGroup, component, requiredUnits, hospital, location, urgency, contact, distanceKm,
+    } = req.body;
+    if (!donorId || !requestGroupId) {
+      return res.status(400).json({ message: 'donorId and requestGroupId are required.' });
+    }
+
+    const donor = await Donor.findById(donorId);
+    if (!donor) {
+      return res.status(404).json({ message: 'Donor not found.' });
+    }
+
+    const alreadySent = await DonationRequest.findOne({ donor: donorId, requestGroupId });
+    if (alreadySent) {
+      return res.status(409).json({ message: 'A request has already been sent to this donor for this search.' });
+    }
+
+    const request = await DonationRequest.create({
+      donor: donorId,
+      requestGroupId,
+      requestedBy: req.user.id,
+      distanceKm: distanceKm != null ? Number(distanceKm) : null,
+      bloodGroup,
+      component,
+      requiredUnits,
+      hospital,
+      location,
+      urgency,
+      contact,
+    });
+
+    res.status(201).json(formatMatch({ requestId: request._id, donor, distanceKm: request.distanceKm, status: request.status }));
+  } catch (error) {
+    res.status(400).json({ message: 'Error sending donation request', error: error.message });
   }
 };
 
@@ -213,6 +251,7 @@ module.exports = {
   getMyRequests,
   acceptRequest,
   rejectRequest,
-  createEmergencyRequest,
+  searchMatchingDonors,
+  sendDonationRequest,
   getMatchesForGroup,
 };
