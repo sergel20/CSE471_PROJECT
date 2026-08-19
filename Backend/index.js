@@ -14,6 +14,7 @@ const reportApprovalRoutes = require('./routes/reportApprovalRoutes');
 const reportRoutes = require('./routes/reportRoutes');
 const donorRoutes = require('./routes/donorRoutes');
 const donationRequestRoutes = require('./routes/donationRequestRoutes');
+const chatbotRoutes = require('./routes/chatbotRoutes');
 
 const app = express();
 
@@ -29,8 +30,18 @@ app.use('/api/report-approval', reportApprovalRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/donors', donorRoutes);
 app.use('/api/donation-requests', donationRequestRoutes);
+app.use('/api/chatbot', chatbotRoutes);
 
 app.get('/', (req, res) => res.send('API Running'));
+
+// Catches malformed JSON bodies from express.json() before they hit Express's default
+// HTML error page, which would otherwise leak stack traces to the client.
+app.use((error, req, res, next) => {
+  if (error.type === 'entity.parse.failed') {
+    return res.status(400).json({ message: 'Malformed request body.' });
+  }
+  next(error);
+});
 
 const PORT = process.env.PORT || 1520;
 

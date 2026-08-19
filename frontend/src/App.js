@@ -10,6 +10,7 @@ import ResultManagementPage from './pages/ResultManagementPage';
 import SampleStatusPage from './pages/SampleStatusPage';
 import ReportApprovalPage from './pages/ReportApprovalPage';
 import MyDonorProfilePage from './pages/MyDonorProfilePage';
+import ChatbotPage from './pages/ChatbotPage';
 import EmergencyBloodRequestPage from './pages/EmergencyBloodRequestPage';
 import AdminUsersPage from './pages/AdminUsersPage';
 import AdminBookingsPage from './pages/AdminBookingsPage';
@@ -83,6 +84,14 @@ function AppShell() {
           element={
             <RequireRole roles={[ROLES.PATIENT, ROLES.DOCTOR]}>
               <ReportApprovalPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="/support"
+          element={
+            <RequireRole roles={[ROLES.PATIENT]}>
+              <ChatbotPage />
             </RequireRole>
           }
         />
