@@ -24,7 +24,7 @@ const NAV_ITEMS_BY_ROLE = {
     { label: 'Dashboard', to: '/dashboard' },
     { label: 'Blood Request', to: '/blood-request' },
   ],
-  [ROLES.PHARMACY]: [{ label: 'Dashboard', to: '/dashboard' }],
+  [ROLES.PHARMACY]: [{ label: 'Medicine Stock', to: '/pharmacy-stock' }],
   [ROLES.ADMIN]: [
     { label: 'Bookings', to: '/admin/bookings' },
     { label: 'Diagnostic Tests', to: '/tests' },

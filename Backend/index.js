@@ -15,6 +15,7 @@ const reportRoutes = require('./routes/reportRoutes');
 const donorRoutes = require('./routes/donorRoutes');
 const donationRequestRoutes = require('./routes/donationRequestRoutes');
 const chatbotRoutes = require('./routes/chatbotRoutes');
+const pharmacyMedicineRoutes = require('./routes/pharmacyMedicineRoutes');
 
 const app = express();
 
@@ -31,6 +32,7 @@ app.use('/api/reports', reportRoutes);
 app.use('/api/donors', donorRoutes);
 app.use('/api/donation-requests', donationRequestRoutes);
 app.use('/api/chatbot', chatbotRoutes);
+app.use('/api/pharmacy-medicines', pharmacyMedicineRoutes);
 
 app.get('/', (req, res) => res.send('API Running'));
 

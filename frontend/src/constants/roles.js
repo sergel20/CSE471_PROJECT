@@ -28,6 +28,6 @@ export const ROLE_HOME = {
   [ROLES.DOCTOR]: '/report-approval',
   [ROLES.DONOR]: '/donor-profile',
   [ROLES.HOSPITAL_STAFF]: '/dashboard',
-  [ROLES.PHARMACY]: '/dashboard',
+  [ROLES.PHARMACY]: '/pharmacy-stock',
   [ROLES.ADMIN]: '/admin/bookings',
 };

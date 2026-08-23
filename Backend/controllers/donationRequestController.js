@@ -60,7 +60,7 @@ const searchMatchingDonors = async (req, res) => {
       return res.status(400).json({ message: validationError });
     }
 
-    const { bloodGroup, location } = req.body;
+    const { bloodGroup, location, hospital } = req.body;
     const maxDistanceKm = Number(req.body.maxDistanceKm) || undefined;
     const { requestGeo, matches } = await findMatchingDonors({ bloodGroup, location, maxDistanceKm });
 
@@ -71,7 +71,10 @@ const searchMatchingDonors = async (req, res) => {
 
     res.status(200).json({
       requestGroupId,
+      location,
+      hospital,
       geocoded: !!requestGeo,
+      coordinates: requestGeo ? { lat: requestGeo.lat, lon: requestGeo.lon } : null,
       matchedCount: responseMatches.length,
       matches: responseMatches,
     });

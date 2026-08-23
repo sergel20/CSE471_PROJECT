@@ -278,19 +278,36 @@ function EmergencyBloodRequestPage() {
         </div>
       ) : (
         <div>
-          <div className="mb-6 rounded-lg border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-700 flex items-center justify-between">
-            <span>
-              {result.matchedCount} eligible donor{result.matchedCount === 1 ? '' : 's'} found nearby
-              {!result.geocoded && ' (location could not be pinpointed — showing all compatible donors regardless of distance)'}.
-              Send a request to whichever donor(s) you'd like to reach.
-            </span>
-            <button
-              type="button"
-              onClick={handleNewRequest}
-              className="ml-4 shrink-0 rounded-lg border border-sky-300 px-3 py-1.5 text-sm font-medium text-sky-700 hover:bg-sky-100"
-            >
-              New Search
-            </button>
+          <div className="mb-6 rounded-2xl border border-gray-200 bg-white shadow-sm p-6">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1">
+                  Sending request from
+                </p>
+                <p className="text-lg font-semibold text-gray-900">{result.hospital}</p>
+                <p className="text-sm text-gray-600 flex items-center gap-1 mt-0.5">
+                  <span aria-hidden="true">📍</span>
+                  {result.location}
+                </p>
+                <p className="mt-2 text-xs text-gray-400">
+                  {result.geocoded && result.coordinates
+                    ? `Location pinpointed at ${result.coordinates.lat.toFixed(4)}, ${result.coordinates.lon.toFixed(4)} — donors are ranked by distance from here.`
+                    : 'This location could not be pinpointed on the map — showing all compatible donors regardless of distance.'}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleNewRequest}
+                className="shrink-0 rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                New Search
+              </button>
+            </div>
+          </div>
+
+          <div className="mb-6 rounded-lg border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-700">
+            {result.matchedCount} eligible donor{result.matchedCount === 1 ? '' : 's'} found nearby. Send a request
+            to whichever donor(s) you'd like to reach.
           </div>
 
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">

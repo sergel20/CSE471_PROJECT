@@ -12,6 +12,7 @@ import ReportApprovalPage from './pages/ReportApprovalPage';
 import MyDonorProfilePage from './pages/MyDonorProfilePage';
 import ChatbotPage from './pages/ChatbotPage';
 import EmergencyBloodRequestPage from './pages/EmergencyBloodRequestPage';
+import PharmacyStockPage from './pages/PharmacyStockPage';
 import AdminUsersPage from './pages/AdminUsersPage';
 import AdminBookingsPage from './pages/AdminBookingsPage';
 import PlaceholderDashboardPage from './pages/PlaceholderDashboardPage';
@@ -124,6 +125,14 @@ function AppShell() {
           element={
             <RequireRole roles={[ROLES.ADMIN]}>
               <AdminUsersPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="/pharmacy-stock"
+          element={
+            <RequireRole roles={[ROLES.PHARMACY]}>
+              <PharmacyStockPage />
             </RequireRole>
           }
         />
