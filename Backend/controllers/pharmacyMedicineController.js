@@ -8,6 +8,7 @@ const User = require("../models/User");
 const EDITABLE_FIELDS = [
   "medicineName",
   "brand",
+  "category",
   "location",
   "batchNumber",
   "expiryDate",
@@ -96,14 +97,20 @@ const getAllMedicines = async (req, res) => {
   }
 };
 
-// GET: Search medicines by name and/or location.
+// GET: Search medicines by name, brand, category, and/or location.
 const searchMedicine = async (req, res) => {
   try {
-    const { medicineName, location } = req.query;
+    const { medicineName, brand, category, location } = req.query;
     const filter = {};
 
     if (medicineName) {
       filter.medicineName = { $regex: medicineName, $options: "i" };
+    }
+    if (brand) {
+      filter.brand = { $regex: brand, $options: "i" };
+    }
+    if (category) {
+      filter.category = { $regex: category, $options: "i" };
     }
     if (location) {
       filter.location = { $regex: location, $options: "i" };

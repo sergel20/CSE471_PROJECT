@@ -12,6 +12,7 @@ const NAV_ITEMS_BY_ROLE = {
     { label: 'Sample Status', to: '/sample-status' },
     { label: 'Reports', to: '/report-approval' },
     { label: 'Blood Request', to: '/blood-request' },
+    { label: 'Medicine Search', to: '/medicine-search' },
     { label: 'Support', to: '/support' },
   ],
   [ROLES.LAB_STAFF]: [

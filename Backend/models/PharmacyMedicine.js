@@ -27,6 +27,15 @@ const pharmacyMedicineSchema = new mongoose.Schema(
       trim: true
     },
 
+    // Optional grouping used by medicine search (e.g. "Painkiller", "Antibiotic").
+    // Not required so existing inventory entries created before this field was added
+    // remain valid.
+    category: {
+      type: String,
+      trim: true,
+      default: ""
+    },
+
     // Denormalized from the owning pharmacy's account name at creation time, so other
     // features (medicine search, emergency medicine matching) can display/filter on it
     // without an extra lookup — mirrors `pharmacyName` already expected by

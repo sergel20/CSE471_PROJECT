@@ -13,6 +13,7 @@ import MyDonorProfilePage from './pages/MyDonorProfilePage';
 import ChatbotPage from './pages/ChatbotPage';
 import EmergencyBloodRequestPage from './pages/EmergencyBloodRequestPage';
 import PharmacyStockPage from './pages/PharmacyStockPage';
+import MedicineSearchPage from './pages/MedicineSearchPage';
 import AdminUsersPage from './pages/AdminUsersPage';
 import AdminBookingsPage from './pages/AdminBookingsPage';
 import PlaceholderDashboardPage from './pages/PlaceholderDashboardPage';
@@ -125,6 +126,14 @@ function AppShell() {
           element={
             <RequireRole roles={[ROLES.ADMIN]}>
               <AdminUsersPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="/medicine-search"
+          element={
+            <RequireRole roles={[ROLES.PATIENT]}>
+              <MedicineSearchPage />
             </RequireRole>
           }
         />
