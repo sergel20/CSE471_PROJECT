@@ -4,6 +4,7 @@ import apiClient from '../api/client';
 const emptyForm = {
   medicineName: '',
   brand: '',
+  category: '',
   location: '',
   batchNumber: '',
   expiryDate: '',
@@ -83,6 +84,7 @@ function PharmacyStockPage() {
     setForm({
       medicineName: medicine.medicineName || '',
       brand: medicine.brand || '',
+      category: medicine.category || '',
       location: medicine.location || '',
       batchNumber: medicine.batchNumber || '',
       expiryDate: medicine.expiryDate ? medicine.expiryDate.slice(0, 10) : '',
@@ -112,6 +114,7 @@ function PharmacyStockPage() {
     const payload = {
       medicineName: form.medicineName.trim(),
       brand: form.brand.trim(),
+      category: form.category.trim(),
       location: form.location.trim(),
       batchNumber: form.batchNumber.trim(),
       expiryDate: form.expiryDate,
@@ -221,6 +224,17 @@ function PharmacyStockPage() {
                   className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200"
                 />
               </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Category (optional)</label>
+              <input
+                name="category"
+                value={form.category}
+                onChange={handleChange}
+                placeholder="Painkiller"
+                className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200"
+              />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -353,6 +367,7 @@ function PharmacyStockPage() {
                 <tr className="border-b border-gray-200 text-left text-xs uppercase tracking-wide text-gray-500">
                   <th className="py-3 pr-4">Medicine</th>
                   <th className="py-3 pr-4">Brand</th>
+                  <th className="py-3 pr-4">Category</th>
                   <th className="py-3 pr-4">Batch #</th>
                   <th className="py-3 pr-4">Qty</th>
                   <th className="py-3 pr-4">Price</th>
@@ -366,6 +381,7 @@ function PharmacyStockPage() {
                   <tr key={medicine._id} className="border-b border-gray-100 align-top">
                     <td className="py-4 pr-4 font-medium text-gray-900">{medicine.medicineName}</td>
                     <td className="py-4 pr-4 text-gray-600">{medicine.brand}</td>
+                    <td className="py-4 pr-4 text-gray-600">{medicine.category || '—'}</td>
                     <td className="py-4 pr-4 text-gray-600">{medicine.batchNumber}</td>
                     <td className="py-4 pr-4 text-gray-600">{medicine.availableQuantity}</td>
                     <td className="py-4 pr-4 text-gray-600">৳{medicine.price}</td>
