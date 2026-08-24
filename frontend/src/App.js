@@ -19,7 +19,7 @@ import AdminBookingsPage from './pages/AdminBookingsPage';
 import PlaceholderDashboardPage from './pages/PlaceholderDashboardPage';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
-
+import PaymentResultPage from './pages/PaymentResultPage';
 // "/" has no page of its own — it just sends each role to its own dashboard.
 function HomeRedirect() {
   const { user } = useAuth();
@@ -54,6 +54,14 @@ function AppShell() {
           element={
             <RequireRole roles={[ROLES.PATIENT]}>
               <BookingPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="/payment-result"
+          element={
+            <RequireRole roles={[ROLES.PATIENT]}>
+              <PaymentResultPage />
             </RequireRole>
           }
         />

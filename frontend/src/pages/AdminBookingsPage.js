@@ -111,18 +111,32 @@ function AdminBookingsPage() {
                 <div className="text-right">
                   <p className="font-bold text-sky-700">৳{booking.totalPrice}</p>
                   <p className="text-xs uppercase tracking-wide text-gray-500">{booking.bookingStatus}</p>
+                  <span
+                    className={`mt-1 inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${
+                      booking.paymentStatus === 'paid'
+                        ? 'bg-emerald-100 text-emerald-700'
+                        : booking.paymentStatus === 'failed'
+                        ? 'bg-red-100 text-red-700'
+                        : 'bg-amber-100 text-amber-700'
+                    }`}
+                  >
+                    Payment: {booking.paymentStatus}
+                  </span>
                 </div>
               </div>
-
-              {booking.bookingStatus === 'Pending Confirmation' ? (
+              {booking.bookingStatus === 'Pending Confirmation' && booking.paymentStatus === 'paid' ? (
                 <button
                   type="button"
                   onClick={() => confirmBooking(booking._id)}
                   disabled={acting === booking._id}
                   className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:bg-gray-300"
                 >
-                  {acting === booking._id ? 'Confirming...' : 'Confirm Payment & Generate Sample IDs'}
+                  {acting === booking._id ? 'Generating...' : 'Generate Sample IDs'}
                 </button>
+              ) : booking.bookingStatus === 'Pending Confirmation' ? (
+                <p className="rounded-lg bg-amber-50 px-4 py-2 text-sm text-amber-700">
+                  Waiting for the patient to complete payment via bKash before samples can be generated.
+                </p>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="min-w-full text-sm">

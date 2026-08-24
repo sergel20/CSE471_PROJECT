@@ -156,8 +156,8 @@ const confirmBooking = async (req, res) => {
     if (booking.bookingStatus === 'Confirmed') {
       return res.status(200).json({ message: 'Booking is already confirmed.', booking });
     }
-    if (booking.bookingStatus !== 'Pending Confirmation') {
-      return res.status(409).json({ message: `A ${booking.bookingStatus} booking cannot be confirmed.` });
+    if (booking.paymentStatus !== 'paid') {
+      return res.status(409).json({ message: 'This booking has not been paid yet. The patient must complete payment first.' });
     }
 
     const admin = await User.findById(req.user.id).select('name');
@@ -186,7 +186,7 @@ const confirmBooking = async (req, res) => {
       bookedTest.statusHistory.push({ status: 'Booked', updatedBy });
     }
 
-    booking.paymentStatus = 'paid';
+   
     booking.bookingStatus = 'Confirmed';
     booking.confirmedBy = req.user.id;
     booking.confirmedAt = new Date();
