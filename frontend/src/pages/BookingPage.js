@@ -108,13 +108,20 @@ function BookingPage() {
         patientInfo,
       });
       setBookingRequest(data);
+
+      const bookingId = data.booking._id;
+      const { data: paymentData } = await apiClient.post(`/payments/${bookingId}/initiate`);
+      window.location.href = paymentData.bkashURL;
     } catch (err) {
-      setSubmitError(err.response?.data?.message || 'Failed to send the payment confirmation request.');
+      setSubmitError(
+        err.response?.data?.message ||
+          'Booking was created, but starting the bKash payment failed. Please try again from your bookings.'
+      );
     } finally {
       setSubmitting(false);
     }
   };
-
+  
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       <StepIndicator step={step} />
