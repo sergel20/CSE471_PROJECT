@@ -1,7 +1,20 @@
 const mongoose = require("mongoose");
 
+// A patient's urgent request for a medicine, routed to whichever pharmacy responds first.
+// Deliberately request/response only — no multi-pharmacy matching or availability search
+// here, since that's owned by Medicine Search and Availability (pharmacyMedicineController)
+// and Pharmacy Stock and Expiry Management (also pharmacyMedicineController/PharmacyMedicine).
 const medicineRequestSchema = new mongoose.Schema(
   {
+    // The patient account that submitted this request. Set from the authenticated user on
+    // create (see medicineRequestController.createMedicineRequest), never accepted from the
+    // request body, so requests can be scoped to "my requests" (getMyRequests).
+    patient: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true
+    },
+
     patientName: {
       type: String,
       required: true,
@@ -28,7 +41,7 @@ const medicineRequestSchema = new mongoose.Schema(
 
     urgencyLevel: {
       type: String,
-      enum: ["Critical", "High", "Medium", "Low"],
+      enum: ["Low", "Medium", "High", "Emergency"],
       default: "Medium"
     },
 
@@ -37,6 +50,7 @@ const medicineRequestSchema = new mongoose.Schema(
       default: false
     },
 
+    // Optional free-text prescription details (e.g. dosage, prescribing doctor).
     prescription: {
       type: String,
       default: ""
@@ -44,47 +58,39 @@ const medicineRequestSchema = new mongoose.Schema(
 
     requestStatus: {
       type: String,
-      enum: [
-        "Searching",
-        "Pharmacy Responded",
-        "Accepted",
-        "Rejected",
-        "Completed"
-      ],
-      default: "Searching"
+      enum: ["Pending", "Accepted", "Ready for Pickup", "Completed", "Rejected"],
+      default: "Pending"
     },
 
-    matchedPharmacies: [
-      {
-        pharmacyName: String,
-        location: String,
-        availableQuantity: Number,
-        price: Number,
-        canFulfill: Boolean,
-        responseStatus: {
-          type: String,
-          enum: ["Pending", "Accepted", "Rejected"],
-          default: "Pending"
-        },
-        preparationTime: {
-          type: String,
-          default: ""
-        }
+    // Filled in by whichever pharmacy responds — see acceptRequest/rejectRequest and the
+    // preparation-time/response-message updates in medicineRequestController.
+    pharmacyResponse: {
+      pharmacy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        default: null
+      },
+      pharmacyName: {
+        type: String,
+        default: ""
+      },
+      preparationTime: {
+        type: String,
+        default: ""
+      },
+      responseMessage: {
+        type: String,
+        default: ""
+      },
+      respondedAt: {
+        type: Date,
+        default: null
       }
-    ],
-
-    approvedAlternatives: [
-      {
-        type: String
-      }
-    ]
+    }
   },
   {
     timestamps: true
   }
 );
 
-module.exports = mongoose.model(
-  "MedicineRequest",
-  medicineRequestSchema
-);
+module.exports = mongoose.model("MedicineRequest", medicineRequestSchema);
