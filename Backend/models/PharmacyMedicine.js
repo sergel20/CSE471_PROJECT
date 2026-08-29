@@ -38,8 +38,7 @@ const pharmacyMedicineSchema = new mongoose.Schema(
 
     // Denormalized from the owning pharmacy's account name at creation time, so other
     // features (medicine search, emergency medicine matching) can display/filter on it
-    // without an extra lookup — mirrors `pharmacyName` already expected by
-    // MedicineRequest.matchedPharmacies.
+    // without an extra lookup — mirrors `pharmacyResponse.pharmacyName` on MedicineRequest.
     pharmacyName: {
       type: String,
       required: true,

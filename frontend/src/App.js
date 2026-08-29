@@ -14,6 +14,8 @@ import ChatbotPage from './pages/ChatbotPage';
 import EmergencyBloodRequestPage from './pages/EmergencyBloodRequestPage';
 import PharmacyStockPage from './pages/PharmacyStockPage';
 import MedicineSearchPage from './pages/MedicineSearchPage';
+import MedicineRequestPage from './pages/MedicineRequestPage';
+import PharmacyMedicineRequestsPage from './pages/PharmacyMedicineRequestsPage';
 import AdminUsersPage from './pages/AdminUsersPage';
 import AdminBookingsPage from './pages/AdminBookingsPage';
 import PlaceholderDashboardPage from './pages/PlaceholderDashboardPage';
@@ -150,6 +152,22 @@ function AppShell() {
           element={
             <RequireRole roles={[ROLES.PHARMACY]}>
               <PharmacyStockPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="/medicine-request"
+          element={
+            <RequireRole roles={[ROLES.PATIENT]}>
+              <MedicineRequestPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="/medicine-requests"
+          element={
+            <RequireRole roles={[ROLES.PHARMACY]}>
+              <PharmacyMedicineRequestsPage />
             </RequireRole>
           }
         />
