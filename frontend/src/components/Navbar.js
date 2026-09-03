@@ -15,6 +15,8 @@ const NAV_ITEMS_BY_ROLE = {
     { label: 'Medicine Search', to: '/medicine-search' },
     { label: 'Medicine Requests', to: '/medicine-request' },
     { label: 'Support', to: '/support' },
+    { label: 'Available Blood', to: '/blood' },
+    { label: 'Cart', to: '/cart' },
   ],
   [ROLES.LAB_STAFF]: [
     { label: 'Results', to: '/results' },
@@ -25,6 +27,7 @@ const NAV_ITEMS_BY_ROLE = {
   [ROLES.HOSPITAL_STAFF]: [
     { label: 'Dashboard', to: '/dashboard' },
     { label: 'Blood Request', to: '/blood-request' },
+    { label: 'Blood Inventory', to: '/inventory' },
   ],
   [ROLES.PHARMACY]: [
     { label: 'Medicine Stock', to: '/pharmacy-stock' },
@@ -33,6 +36,8 @@ const NAV_ITEMS_BY_ROLE = {
   [ROLES.ADMIN]: [
     { label: 'Bookings', to: '/admin/bookings' },
     { label: 'Diagnostic Tests', to: '/tests' },
+    { label: 'Blood Requests', to: '/blood-request' },
+    { label: 'Blood Inventory', to: '/inventory' },
     { label: 'Users', to: '/admin/users' },
   ],
 };
