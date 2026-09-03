@@ -22,6 +22,9 @@ import PlaceholderDashboardPage from './pages/PlaceholderDashboardPage';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import PaymentResultPage from './pages/PaymentResultPage';
+import BloodInventoryPage from './pages/BloodInventoryPage';
+import AvailableBloodPage from './pages/AvailableBloodPage';
+import CartPage from './pages/CartPage';
 // "/" has no page of its own — it just sends each role to its own dashboard.
 function HomeRedirect() {
   const { user } = useAuth();
@@ -176,6 +179,30 @@ function AppShell() {
           element={
             <RequireRole roles={[ROLES.HOSPITAL_STAFF, ROLES.PHARMACY]}>
               <PlaceholderDashboardPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="/inventory"
+          element={
+            <RequireRole roles={[ROLES.HOSPITAL_STAFF, ROLES.ADMIN]}>
+              <BloodInventoryPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="/blood"
+          element={
+            <RequireRole roles={[ROLES.PATIENT]}>
+              <AvailableBloodPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="/cart"
+          element={
+            <RequireRole roles={[ROLES.PATIENT]}>
+              <CartPage />
             </RequireRole>
           }
         />
