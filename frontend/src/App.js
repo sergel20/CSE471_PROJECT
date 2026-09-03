@@ -126,7 +126,7 @@ function AppShell() {
         <Route
           path="/blood-request"
           element={
-            <RequireRole roles={[ROLES.PATIENT, ROLES.HOSPITAL_STAFF]}>
+            <RequireRole roles={[ROLES.PATIENT, ROLES.HOSPITAL_STAFF, ROLES.ADMIN]}>
               <EmergencyBloodRequestPage />
             </RequireRole>
           }

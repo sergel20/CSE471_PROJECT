@@ -35,7 +35,12 @@ function SignupPage() {
       await signup(form.name.trim(), form.email.trim(), form.password, form.role);
       navigate('/');
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to create account.');
+      setError(
+        err.response?.data?.message
+        || (err.code === 'ERR_NETWORK'
+          ? 'Cannot reach the server at http://localhost:1520. Make sure the backend is running.'
+          : 'Failed to create account. Please try again.')
+      );
     } finally {
       setSubmitting(false);
     }

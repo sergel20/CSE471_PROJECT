@@ -33,6 +33,7 @@ const NAV_ITEMS_BY_ROLE = {
   [ROLES.ADMIN]: [
     { label: 'Bookings', to: '/admin/bookings' },
     { label: 'Diagnostic Tests', to: '/tests' },
+    { label: 'Blood Requests', to: '/blood-request' },
     { label: 'Users', to: '/admin/users' },
   ],
 };

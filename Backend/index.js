@@ -18,6 +18,7 @@ const chatbotRoutes = require('./routes/chatbotRoutes');
 const pharmacyMedicineRoutes = require('./routes/pharmacyMedicineRoutes');
 const medicineRequestRoutes = require('./routes/medicineRequestRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
+const emergencyBloodRequestRoutes = require('./routes/emergencyBloodRequestRoutes');
 
 const app = express();
 
@@ -37,6 +38,7 @@ app.use('/api/chatbot', chatbotRoutes);
 app.use('/api/pharmacy-medicines', pharmacyMedicineRoutes);
 app.use('/api/medicine-requests', medicineRequestRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/emergency-blood-requests', emergencyBloodRequestRoutes);
 
 app.get('/', (req, res) => res.send('API Running'));
 
