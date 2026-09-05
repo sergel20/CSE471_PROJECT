@@ -8,9 +8,18 @@ function signToken(user) {
   return jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
 }
 
+function ensureJwtConfigured(res) {
+  if (process.env.JWT_SECRET) return true;
+  res.status(500).json({ message: 'Authentication is not configured on the server. JWT_SECRET is missing.' });
+  return false;
+}
+
 // POST: Register a new user account
 const signup = async (req, res) => {
   try {
+    // Check configuration before writing the user. Otherwise signup can create an
+    // account and then fail while signing its token, leaving the user unable to retry.
+    if (!ensureJwtConfigured(res)) return;
     const { name, email, password, role } = req.body;
 
     if (!name || !name.trim()) {
@@ -48,6 +57,7 @@ const signup = async (req, res) => {
 // POST: Log in with email + password
 const login = async (req, res) => {
   try {
+    if (!ensureJwtConfigured(res)) return;
     const { email, password } = req.body;
 
     if (!email || !password) {

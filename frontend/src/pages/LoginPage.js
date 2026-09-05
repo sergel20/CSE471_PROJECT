@@ -23,7 +23,12 @@ function LoginPage() {
       await login(form.email.trim(), form.password);
       navigate('/');
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to log in.');
+      setError(
+        err.response?.data?.message
+        || (err.code === 'ERR_NETWORK'
+          ? 'Cannot reach the server at http://localhost:1520. Make sure the backend is running.'
+          : 'Failed to log in. Please try again.')
+      );
     } finally {
       setSubmitting(false);
     }

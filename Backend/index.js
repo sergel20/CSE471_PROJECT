@@ -18,7 +18,9 @@ const chatbotRoutes = require('./routes/chatbotRoutes');
 const pharmacyMedicineRoutes = require('./routes/pharmacyMedicineRoutes');
 const medicineRequestRoutes = require('./routes/medicineRequestRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
-
+const emergencyBloodRequestRoutes = require('./routes/emergencyBloodRequestRoutes');
+const bloodInventoryRoutes = require('./routes/bloodInventoryRoutes');
+const cartRoutes = require('./routes/cartRoutes');
 const app = express();
 
 app.use(cors());
@@ -37,7 +39,9 @@ app.use('/api/chatbot', chatbotRoutes);
 app.use('/api/pharmacy-medicines', pharmacyMedicineRoutes);
 app.use('/api/medicine-requests', medicineRequestRoutes);
 app.use('/api/payments', paymentRoutes);
-
+app.use('/api/emergency-blood-requests', emergencyBloodRequestRoutes);
+app.use('/api/blood-inventory', bloodInventoryRoutes);
+app.use('/api/cart', cartRoutes);
 app.get('/', (req, res) => res.send('API Running'));
 
 // Catches malformed JSON bodies from express.json() before they hit Express's default
