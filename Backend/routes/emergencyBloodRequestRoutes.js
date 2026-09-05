@@ -4,6 +4,7 @@ const {
   createRequest,
   getAllRequests,
   getRequestById,
+  getRequestMatches,
   updateStatus,
   updateProgressNote,
   getRequestHistory,
@@ -16,6 +17,7 @@ router.post('/', requireRole('patient', 'hospital_staff'), createRequest);
 router.get('/', requireRole('patient', 'hospital_staff', 'admin'), getAllRequests);
 router.get('/history', requireRole('patient', 'hospital_staff', 'admin'), getRequestHistory);
 router.get('/:id', requireRole('patient', 'hospital_staff', 'admin'), getRequestById);
+router.get('/:id/matches', requireRole('patient', 'hospital_staff', 'admin'), getRequestMatches);
 router.patch('/:id/status', requireRole('patient', 'hospital_staff', 'admin'), updateStatus);
 router.patch('/:id/progress-note', requireRole('hospital_staff', 'admin'), updateProgressNote);
 

@@ -57,6 +57,9 @@ function EmergencyBloodRequestPage() {
   const [working, setWorking] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [matches, setMatches] = useState(null);
+  const [matchGeocoded, setMatchGeocoded] = useState(true);
+  const [matchLoading, setMatchLoading] = useState(false);
 
   const loadHistory = useCallback(async () => {
     try {
@@ -83,12 +86,31 @@ function EmergencyBloodRequestPage() {
     setForm((previous) => ({ ...previous, [name]: value }));
   };
 
+  // Re-runs geolocation-based nearby-donor matching for a request (backend geocodes the
+  // request location via Nominatim, then $geoNear against donors). Best-effort: a failure
+  // just leaves the panel empty rather than surfacing a page error.
+  const loadMatches = useCallback(async (id) => {
+    setMatchLoading(true);
+    setMatches(null);
+    try {
+      const { data } = await apiClient.get(`/emergency-blood-requests/${id}/matches`);
+      setMatches(Array.isArray(data.donors) ? data.donors : []);
+      setMatchGeocoded(data.geocoded !== false);
+    } catch (err) {
+      setMatches([]);
+      setMatchGeocoded(true);
+    } finally {
+      setMatchLoading(false);
+    }
+  }, []);
+
   const openRequest = async (id) => {
     clearAlerts();
     try {
       const { data } = await apiClient.get(`/emergency-blood-requests/${id}`);
       setSelected(data);
       setProgressNote(data.latestProgressNote || '');
+      loadMatches(id);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to load the blood request.');
     }
@@ -107,6 +129,10 @@ function EmergencyBloodRequestPage() {
       setForm(emptyForm);
       setSelected(data.request);
       setMessage(data.message);
+      const donorMatch = data.donorMatch || {};
+      setMatches(Array.isArray(donorMatch.donors) ? donorMatch.donors : []);
+      setMatchGeocoded(donorMatch.geocoded !== false);
+      setMatchLoading(false);
       await loadHistory();
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to submit the blood request.');
@@ -267,6 +293,49 @@ function EmergencyBloodRequestPage() {
               </label>
               <button disabled={working} className="mt-2 rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700 disabled:bg-gray-300">Save Progress Note</button>
             </form>
+          )}
+        </section>
+      )}
+
+      {selected && (
+        <section className="mt-6 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+          <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900">Nearby Matching Donors</h2>
+              <p className="mt-1 text-xs text-gray-500">Compatible, available and eligible donors for {selected.bloodGroup}, ranked nearest first to {selected.location}.</p>
+            </div>
+            <button type="button" onClick={() => loadMatches(selected._id)} className="text-sm font-medium text-sky-700 hover:underline">Refresh</button>
+          </div>
+
+          {matchLoading ? (
+            <p className="text-sm text-gray-500">Finding nearby donors...</p>
+          ) : !matches || matches.length === 0 ? (
+            <p className="text-sm text-gray-500">No matching donors found.</p>
+          ) : (
+            <>
+              {!matchGeocoded && <p className="mb-3 text-xs text-amber-600">This location could not be mapped, so donors are shown without distance ranking.</p>}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {matches.map((donor) => (
+                  <div key={donor.donorId} className="rounded-xl border border-gray-200 p-4">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <p className="font-semibold text-gray-900">{donor.fullName}</p>
+                        <p className="text-sm text-gray-500">{donor.location}</p>
+                      </div>
+                      <Badge value={donor.bloodGroup} />
+                    </div>
+                    <dl className="mt-3 grid grid-cols-2 gap-y-1 text-sm">
+                      <dt className="text-gray-500">Distance</dt>
+                      <dd className="text-right font-medium text-gray-900">{donor.distanceKm != null ? `${donor.distanceKm} km away` : 'Unknown'}</dd>
+                      <dt className="text-gray-500">Contact</dt>
+                      <dd className="text-right font-medium"><a href={`tel:${donor.phone}`} className="text-sky-700 hover:underline">{donor.phone}</a></dd>
+                      <dt className="text-gray-500">Availability</dt>
+                      <dd className="text-right font-medium text-gray-900">{donor.available ? 'Available' : 'Unavailable'}</dd>
+                    </dl>
+                  </div>
+                ))}
+              </div>
+            </>
           )}
         </section>
       )}

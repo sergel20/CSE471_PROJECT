@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const EmergencyBloodRequest = require('../models/EmergencyBloodRequest');
+const { findMatchingDonors } = require('../library/donorMatching');
 
 const { BLOOD_GROUPS, PRIORITIES, REQUEST_STATUSES } = EmergencyBloodRequest;
 const MANAGER_ROLES = ['hospital_staff', 'admin'];
@@ -44,6 +45,38 @@ function handleError(res, error, fallbackMessage) {
   return res.status(500).json({ message: fallbackMessage, error: error.message });
 }
 
+// Runs geolocation-based nearby-donor matching for an emergency request and shapes the
+// result for the client (see library/donorMatching.js — geocodes the request location via
+// Nominatim, then $geoNear against donors' 2dsphere index). Matching is best-effort: any
+// failure (geocode/network/DB) resolves to an empty list so it never blocks request
+// creation or retrieval.
+async function matchDonorsForRequest(request) {
+  // No DB connection => matching can't run; skip straight to an empty result (also keeps
+  // unit tests that stub the model from making a live geocode/aggregate call).
+  if (mongoose.connection.readyState !== 1) return { geocoded: false, donors: [] };
+  try {
+    const { requestGeo, matches } = await findMatchingDonors({
+      bloodGroup: request.bloodGroup,
+      location: request.location,
+    });
+    return {
+      geocoded: !!requestGeo,
+      donors: matches.map(({ donor, distanceKm, eligibility }) => ({
+        donorId: donor._id,
+        fullName: donor.fullName,
+        bloodGroup: donor.bloodGroup,
+        phone: donor.phone,
+        location: donor.location,
+        available: donor.available,
+        distanceKm: distanceKm != null ? Math.round(distanceKm * 10) / 10 : null,
+        nextEligibleDate: eligibility ? eligibility.nextEligibleDate : null,
+      })),
+    };
+  } catch (error) {
+    return { geocoded: false, donors: [] };
+  }
+}
+
 const createRequest = async (req, res) => {
   try {
     const errorMessage = validationMessage(req.body);
@@ -62,9 +95,29 @@ const createRequest = async (req, res) => {
       additionalNotes: req.body.additionalNotes ? String(req.body.additionalNotes).trim() : '',
       statusHistory: [{ fromStatus: null, toStatus: 'Submitted', updatedBy: req.user.id, updatedByRole: req.user.role }],
     });
-    return res.status(201).json({ message: 'Emergency blood request submitted successfully.', request });
+    const donorMatch = await matchDonorsForRequest(request);
+    return res.status(201).json({
+      message: 'Emergency blood request submitted successfully.',
+      request,
+      donorMatch,
+    });
   } catch (error) {
     return handleError(res, error, 'Failed to create blood request.');
+  }
+};
+
+// GET: Re-run nearby-donor matching for an existing request (used when the requester opens
+// a request from their history). Access is limited the same way getRequestById is.
+const getRequestMatches = async (req, res) => {
+  try {
+    const request = await EmergencyBloodRequest.findById(req.params.id);
+    if (!request) return res.status(404).json({ message: 'Blood request not found.' });
+    if (!canAccess(request, req.user)) return res.status(403).json({ message: 'You can only view your own blood requests.' });
+
+    const donorMatch = await matchDonorsForRequest(request);
+    return res.status(200).json(donorMatch);
+  } catch (error) {
+    return handleError(res, error, 'Failed to match donors for this request.');
   }
 };
 
@@ -159,4 +212,4 @@ const updateProgressNote = async (req, res) => {
   }
 };
 
-module.exports = { createRequest, getAllRequests, getRequestById, updateStatus, updateProgressNote, getRequestHistory };
+module.exports = { createRequest, getAllRequests, getRequestById, getRequestMatches, updateStatus, updateProgressNote, getRequestHistory };
